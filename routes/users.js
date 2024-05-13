@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 const db = require('../db');
-const secretKey = 'Ticket$System';
 
 // Função para verificar se o usuário já existe no banco de dados
 function checkExistingUsers(cpf, cnpj) {

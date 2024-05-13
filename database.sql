@@ -6,3 +6,12 @@ CREATE TABLE users (
     cnpj VARCHAR(19),
     password VARCHAR(255) NOT NULL
 );
+
+CREATE TABLE tokens (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    token VARCHAR(255) NOT NULL,
+    user_id INT NOT NULL,
+    login_data DATE NOT NULL,
+    logout_data DATE,
+    CONSTRAINT FK_user_id FOREIGN KEY (user_id) REFERENCES users (id)
+);
