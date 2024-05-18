@@ -1,7 +1,7 @@
 const express = require('express'), bodyParser = require('body-parser');
 const cors = require('cors');
-const usersRouter = require('./routes/users');
-const authenticationRouter = require('./routes/authentication')
+const customersRouter = require('./src/routes/customers');
+const authenticationRouter = require('./src/routes/authentication')
 
 const app = express();
 const PORT = 3000;
@@ -12,8 +12,8 @@ app.use(express.json());
 app.use(bodyParser.json());
 
 // Adcionando as rotas
-app.use('/users', usersRouter);
-app.use('/authentication', authenticationRouter);
+app.use('/customers', customersRouter);
+// app.use('/authentication', authenticationRouter);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
