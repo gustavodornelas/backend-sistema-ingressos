@@ -11,8 +11,8 @@ CREATE TABLE customers (
 CREATE TABLE tokens (
     id INT PRIMARY KEY AUTO_INCREMENT,
     token VARCHAR(255) NOT NULL,
-    user_id INT NOT NULL,
+    customer_id INT NOT NULL,
     login_data DATE NOT NULL,
     logout_data DATE,
-    CONSTRAINT FK_user_id FOREIGN KEY (user_id) REFERENCES users (id)
+    CONSTRAINT FK_user_id FOREIGN KEY (user_id) REFERENCES customers (id)
 );

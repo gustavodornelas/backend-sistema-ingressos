@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 
 // Adcionando as rotas
 app.use('/customers', customersRouter);
-// app.use('/authentication', authenticationRouter);
+app.use('/authentication', authenticationRouter);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);

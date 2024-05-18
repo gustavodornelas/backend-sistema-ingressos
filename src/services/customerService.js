@@ -1,8 +1,9 @@
 const connection = require('../config/connection');
+const bcrypt = require('bcrypt')
+
 const DuplicateError = require('../CustomErrors/DuplicateError');
 const NotFoundError = require('../CustomErrors/SystemError');
 const Customer = require('../models/customer');
-const bcrypt = require('bcrypt')
 
 
 // Função para verificar se o usuário já existe no banco de dados
@@ -20,10 +21,18 @@ const checkExistingCustomer = async (customer) => {
 const getAllCustomers = async () => {
     try {
         const sql = 'SELECT * FROM customers';
-        const [query] = await connection.execute(sql);
-        return query.map(row => new Customer(row));
+        const [rows] = await connection.execute(sql);
+        return rows.map(row => new Customer(
+            row.id,
+            row.name,
+            row.email,
+            row.cpfCnpj,
+            row.personType,
+            row.password,
+            row.asaasId
+        ));
     } catch (error) {
-        throw new Error('Erro ao buscar usuários!');
+        throw new Error('Erro ao buscar usuários');
     }
 };
 
@@ -31,19 +40,27 @@ const getAllCustomers = async () => {
 const getCustomer = async (customerId) => {
     try {
         const sql = 'SELECT * FROM customers WHERE id = ?';
-        const [query] = await connection.execute(sql, [customerId]);
+        const [rows] = await connection.execute(sql, [customerId]);
         // Verifique se o usuário foi encontrado
-        if (query.length === 0) {
+        if (rows.length === 0) {
             throw new NotFoundError('Usuário não encontrado');
         }
-        return new Customer(query[0]);
+
+        const customerData = (rows[0])
+        return new Customer(
+            customerData.id,
+            customerData.name,
+            customerData.email,
+            customerData.cpfCnpj,
+            customerData.personType,
+            customerData.password,
+            customerData.asaasId
+        )
     } catch (error) {
         if (error instanceof NotFoundError) {
             throw error;
-        } else {
-            console.log(error.message)
-            throw new Error('Erro ao buscar usuário');
         }
+        throw new Error('Erro ao buscar usuário');
     }
 };
 
@@ -53,7 +70,7 @@ const createNewCustomer = async (customer) => {
     try {
         const existingUser = await checkExistingCustomer(customer);
         if (existingUser) {
-            throw new DuplicateError("Já existe um usuário com este CPF ou CNPJ cadastrado.");
+            throw new DuplicateError("Já existe um usuário com este CPF ou CNPJ cadastrado");
         }
 
         // Hash da senha antes de armazenar no banco de dados
@@ -62,9 +79,11 @@ const createNewCustomer = async (customer) => {
         const sql = 'INSERT INTO customers (name, email, cpfCnpj, personType, password, asaasId) VALUES (?, ?, ?, ?, ?, ?)'
         connection.execute(sql, [customer.name, customer.email, customer.cpfCnpj, customer.personType, hashPassword, customer.asaasId]);
     } catch (error) {
-        throw new Error('Erro ao cadastrar usuário: ' + error.message)
+        if (error instanceof DuplicateError) {
+            throw error;
+        }
+        throw new Error('Erro ao cadastrar usuário')
     }
-
 }
 
 // Atualizar usuário
@@ -77,13 +96,16 @@ const updateCustomer = async (customer) => {
 
         const sql = 'UPDATE customers SET name = ?, email = ?, cpfCnpj = ?, personType = ?, password = ?, asaasId = ? WHERE id = ?'
         const [ResultSetHeader] = await connection.execute(sql, [customer.name, customer.email, customer.cpfCnpj, customer.personType, hashPassword, customer.asaasId, customer.id])
-        
+
         if (ResultSetHeader.changedRows === 0) {
             throw new NotFoundError('Usuário não encontrado');
         }
 
     } catch (error) {
-        throw new Error('Erro ao atualizar usuário: ' + error.message)
+        if (error instanceof NotFoundError) {
+            throw error;
+        }
+        throw new Error('Erro ao buscar usuário');
     }
 }
 
@@ -94,14 +116,15 @@ const deleteCustomer = async (customerId) => {
         const sql = 'DELETE FROM customers WHERE id = ?'
         const [ResultSetHeader] = await connection.execute(sql, [customerId])
 
-        console.log(ResultSetHeader)
-        
         if (ResultSetHeader.affectedRows === 0) {
             throw new NotFoundError('Usuário não encontrado');
         }
 
     } catch (error) {
-        throw new Error('Erro ao deletar usuário: ' + error.message)
+        if (error instanceof NotFoundError) {
+            throw error;
+        }
+        throw new Error('Erro ao buscar usuário');
     }
 }
 
