@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
 
     try {
         const data = await customerService.getAllCustomers()
-        res.json({ message: "Consulta concluida", customers: { data } })
+        res.json({ message: "Consulta concluida", data })
     } catch (error) {
         handleErrorService(error, res)
     }
@@ -29,7 +29,7 @@ router.get('/:id', async (req, res) => {
 
     try {
         const data = await customerService.getCustomer(customerId)
-        res.json({ message: "Consulta concluida", customer: { data } })
+        res.json({ message: "Consulta concluida", data })
     } catch (error) {
         handleErrorService(error, res)
     }
@@ -48,26 +48,27 @@ router.post('/', async (req, res) => {
         req.body.password,
         req.body.asaasId)
     try {
-        await customerService.createNewCustomer(customer)
-        res.json({ message: "Cadastro conluido com sucesso!" })
+        const data = await customerService.createNewCustomer(customer)
+        res.json({ message: 'Usuário cadastrado com sucesso' })
     } catch (error) {
         handleErrorService(error, res)
     }
 })
 
 // Altera um usuário
-router.put('/:id', async (req, res) => {
+router.put('/', async (req, res) => {
 
-    const customer = new Customer(
-        req.params.id,
-        req.body.name,
-        req.body.email,
-        req.body.cpfCnpj,
-        req.body.personType,
-        req.body.password,
-        req.body.asaasId)
-    
     try {
+
+        const customer = new Customer(
+            req.body.id,
+            req.body.name,
+            req.body.email,
+            req.body.cpfCnpj,
+            req.body.personType,
+            req.body.password,
+            req.body.asaasId)
+
         await customerService.updateCustomer(customer)
         res.status(200).send({ message: 'Usuário atualizado com sucesso' })
     } catch (error) {
@@ -84,6 +85,28 @@ router.delete('/:id', async (req, res) => {
         await customerService.deleteCustomer(id)
         res.json({ message: 'Usuário deletado com sucesso' })
 
+    } catch (error) {
+        handleErrorService(error, res)
+    }
+})
+
+// Alterar senha do usuário
+router.put('/changePassword', async (req, res) => {
+
+    try {
+        const customer = new Customer(
+            req.body.customer.id,
+            req.body.customer.name,
+            req.body.customer.email,
+            req.body.customer.cpfCnpj,
+            req.body.customer.personType,
+            req.body.customer.password,
+            req.body.customer.asaasId)
+
+        const newPassword = req.body.newPassword
+
+        await customerService.changePassword(customer, newPassword)
+        res.json({ message: 'Senha alterada com sucesso' })
     } catch (error) {
         handleErrorService(error, res)
     }

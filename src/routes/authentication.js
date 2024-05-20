@@ -1,14 +1,10 @@
 const express = require('express')
 const router = express.Router()
 
-const connection = require('../config/connection')
 const authenticationService = require('../services/authenticationService')
 
-const UnauthorizedError = require('../CustomErrors/UnauthorizedError')
 const Customer = require('../models/customer')
-const ErrorService = require('../services/handleErrorService')
 const handleErrorService = require('../services/handleErrorService')
-const secretKey = 'Ticket$System'
 
 // Rota para login
 router.post('/login', async (req, res) => {

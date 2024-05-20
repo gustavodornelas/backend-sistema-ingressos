@@ -1,10 +1,16 @@
 const DuplicateError = require("../CustomErrors/DuplicateError")
+const NoContentError = require("../CustomErrors/NoContentError")
 const NotFoundError = require("../CustomErrors/SystemError")
 const UnauthorizedError = require("../CustomErrors/UnauthorizedError")
 
 // errorService.js
 const handleErrorService = (error, res) => {
-    if (error instanceof UnauthorizedError) {
+
+    console.log(error)
+
+    if (error instanceof NoContentError) {
+        return res.status(204).json({ message: error.message })
+    } else if (error instanceof UnauthorizedError) {
         return res.status(401).json({ message: error.message })
     } else if (error instanceof NotFoundError) {
         return res.status(404).json({ message: error.message })
