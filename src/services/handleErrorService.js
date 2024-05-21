@@ -6,10 +6,8 @@ const UnauthorizedError = require("../CustomErrors/UnauthorizedError")
 // errorService.js
 const handleErrorService = (error, res) => {
 
-    console.log(error)
-
     if (error instanceof NoContentError) {
-        return res.status(204).json({ message: error.message })
+        return res.status(202).json({ message: error.message })
     } else if (error instanceof UnauthorizedError) {
         return res.status(401).json({ message: error.message })
     } else if (error instanceof NotFoundError) {

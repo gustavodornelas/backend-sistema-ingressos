@@ -3,7 +3,7 @@ const router = express.Router()
 
 const authenticationService = require('../services/authenticationService')
 
-const Customer = require('../models/customer')
+const Customer = require('../models/Customer')
 const handleErrorService = require('../services/handleErrorService')
 
 // Rota para login

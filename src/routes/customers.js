@@ -1,7 +1,7 @@
 const express = require('express')
 
 // Classe Customer e serviço para logica
-const Customer = require('../models/customer')
+const Customer = require('../models/Customer')
 const customerService = require('../services/customerService')
 
 // Erros customizados

@@ -4,19 +4,19 @@ const jwt = require('jsonwebtoken')
 const secretKey = 'Ticket$System'
 
 const UnauthorizedError = require('../CustomErrors/UnauthorizedError')
-const Customer = require('../models/customer');
-const dbPool = require('../config/dbPool');
+const Customer = require('../models/Customer')
+const dbPool = require('../config/dbPool')
 
 // Rota para login
 const login = async (email, password) => {
     let connection
 
     try {
-        connection = await dbPool.getConnection();
+        connection = await dbPool.getConnection()
 
         // Consulte o banco de dados para obter o usuário
         const sql = 'SELECT * FROM customers WHERE email = ?'
-        const [rows] = await connection.execute(sql, [email]);
+        const [rows] = await connection.execute(sql, [email])
 
         // Verifique se foi encontrado algum usuário
         if (rows.length === 0) {
@@ -24,7 +24,7 @@ const login = async (email, password) => {
         }
 
         // Os dados estão no primeiro elemento do array rows
-        const row = (rows[0]);
+        const row = (rows[0])
         const customer = new Customer(
             row.id,
             row.name,
@@ -60,7 +60,7 @@ const login = async (email, password) => {
         console.log(error)
 
         if (error instanceof UnauthorizedError) {
-            throw error;
+            throw error
         }
 
         throw new Error('Erro ao processar a solicitação')
@@ -76,7 +76,7 @@ const logout = async (customer, token) => {
     let connection
 
     try {
-        connection = await dbPool.getConnection();
+        connection = await dbPool.getConnection()
 
         // Verifique se o token foi fornecido
         if (!token) {
@@ -100,7 +100,7 @@ const logout = async (customer, token) => {
         console.log(error)
 
         if (error instanceof UnauthorizedError) {
-            throw error;
+            throw error
         }
 
         throw new Error('Erro ao processar a solicitação')

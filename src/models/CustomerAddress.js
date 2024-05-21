@@ -1,4 +1,4 @@
-class customerAddress {
+class CustomerAddress {
 
     constructor (id = null, customerId, name, address, addressNumber, city, state, zip_code, defaultAddress, createdAt = null) {
         this.id = id
@@ -14,4 +14,4 @@ class customerAddress {
     }
 }
 
-module.exports = customerAddress
+module.exports = CustomerAddress
