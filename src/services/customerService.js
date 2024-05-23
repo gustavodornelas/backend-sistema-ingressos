@@ -40,10 +40,18 @@ const getAllCustomers = async () => {
 
         const sql = 'SELECT * FROM customers'
         const [rows] = await connection.execute(sql)
+
+        // Verificando se algum cliente foi encontrado
+        if (rows.length === 0 ) {
+            throw new NotFoundError('Nenhum cliente encontrado')
+        }
+
         return rows.map(row => new Customer(
             row.id,
             row.name,
             row.email,
+            row.phone,
+            row.mobile_phone,
             row.cpf_cnpj,
             row.person_type,
             undefined, // Ocultando o campo de senha
@@ -52,6 +60,9 @@ const getAllCustomers = async () => {
         ))
     } catch (error) {
         console.log(error)
+        if(error instanceof NotFoundError) {
+            throw error
+        }
         throw new Error('Erro ao buscar clientes')
     }finally {
         if (connection) {
@@ -81,6 +92,8 @@ const getCustomer = async (customerId) => {
             row.id,
             row.name,
             row.email,
+            row.phone,
+            row.mobile_phone,
             row.cpf_cnpj,
             row.person_type,
             undefined, // Ocultando o campo de senha
@@ -115,15 +128,17 @@ const createNewCustomer = async (customer) => {
 
         // Hash da senha antes de armazenar no banco de dados
         const hashPassword = await bcrypt.hash(customer.password, 10)
-
-        const sql = 'INSERT INTO customers (name, email, cpf_cnpj, person_type, password, asaas_id) VALUES (?, ?, ?, ?, ?, ?)'
+        const sql = 'INSERT INTO customers (name, email, phone, mobile_phone, cpf_cnpj, person_type, password, asaas_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         connection.execute(sql, [customer.name, 
                                  customer.email,
+                                 customer.phone,
+                                 customer.mobilePhone,
                                  customer.cpfCnpj,
                                  customer.personType,
                                  hashPassword,
                                  customer.asaasId
                                 ])
+        
     } catch (error) {
         console.log(error)
         if (error instanceof DuplicateError) {
@@ -145,12 +160,13 @@ const updateCustomer = async (customer) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'UPDATE customers SET name = ?, email = ?, cpf_cnpj = ?, person_type = ?, asaas_id = ? WHERE id = ?'
+        const sql = 'UPDATE customers SET name = ?, email = ?, phone = ?, mobile_phone = ?, cpf_cnpj = ?, person_type = ? WHERE id = ?'
         const [ ResultSetHeader ] = await connection.execute(sql, [customer.name,
                                                                    customer.email,
+                                                                   customer.phone,
+                                                                   customer.mobilePhone,
                                                                    customer.cpfCnpj,
                                                                    customer.personType,
-                                                                   customer.asaasId,
                                                                    customer.id
                                                                 ])
 

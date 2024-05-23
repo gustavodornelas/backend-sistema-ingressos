@@ -11,11 +11,19 @@ const getAllVenues = async () => {
 
         const sql = 'SELECT * FROM venues'
         const [rows] = await connection.execute(sql)
+
+        // Verificando se algum local foi encontrado
+        if (rows.length === 0) { 
+            throw new NotFoundError('Nenhum local foi encontrado')
+        }
+
         return rows.map(row => new Venue(
             row.id,
             row.name,
             row.address,
             row.address_number,
+            row.complement,
+            row.province,
             row.city,
             row.state,
             row.zip_code,
@@ -24,6 +32,9 @@ const getAllVenues = async () => {
         ))
     } catch (error) {
         console.log(error)
+        if (error instanceof NotFoundError) {
+            throw error
+        }
         throw new Error('Erro ao buscar locais')
     } finally {
         if (connection) {
@@ -40,12 +51,20 @@ const getVenue = async (id) => {
 
         const sql = 'SELECT * FROM venues WHERE id = ?'
         const [rows] = await connection.execute(sql, [id])
+
+        // Verificando se o local foi encontrado
+        if (rows.length === 0) {
+            throw new NotFoundError('Local não encontrado')
+        }
+
         const row = rows[0]
         return new Venue(
             row.id,
             row.name,
             row.address,
             row.address_number,
+            row.complement,
+            row.province,
             row.city,
             row.state,
             row.zip_code,
@@ -54,6 +73,9 @@ const getVenue = async (id) => {
         )
     } catch (error) {
         console.log(error)
+        if (error instanceof NotFoundError) {
+            throw error
+        }
         throw new Error('Erro ao buscar locais')
     } finally {
         if (connection) {
@@ -64,18 +86,20 @@ const getVenue = async (id) => {
 
 const createNewVenue = async (venue) => {
     let connection = null
-
+    console.log(venue)
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'INSERT INTO venues (name, address, address_number, city, state, zip_code, capacity) VALUES ( ?, ?, ?, ?, ?, ?, ? )'
+        const sql = 'INSERT INTO venues (name, address, address_number, complement, province, city, state, postal_code, capacity) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )'
         await connection.execute(sql, [
             venue.name,
             venue.address,
             venue.addressNumber,
+            venue.complement,
+            venue.province,
             venue.city,
             venue.state,
-            venue.zipCode,
+            venue.postalCode,
             venue.capacity,
         ])
 
@@ -95,14 +119,16 @@ const updateVenue = async (venue) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'UPDATE venues SET name = ?, address = ?, address_number = ?, city = ?, state = ?, zip_code = ?, capacity = ? WHERE id = ?'
+        const sql = 'UPDATE venues SET name = ?, address = ?, address_number = ?, complement = ?, province = ?, city = ?, state = ?, postal_code = ?, capacity = ? WHERE id = ?'
         const [ResultSetHeader] = await connection.execute(sql, [
             venue.name,
             venue.address,
             venue.addressNumber,
+            venue.complement,
+            venue.province,
             venue.city,
             venue.state,
-            venue.zipCode,
+            venue.postalCode,
             venue.capacity,
             venue.id
         ])

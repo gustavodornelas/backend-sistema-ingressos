@@ -1,14 +1,16 @@
 class CustomerAddress {
 
-    constructor (id = null, customerId, name, address, addressNumber, city, state, zip_code, defaultAddress, createdAt = null) {
+    constructor (id = null, customerId, name, address, addressNumber, complement, province, city, state, postalCode, defaultAddress, createdAt = null) {
         this.id = id
         this.customerId = customerId
         this.name = name
         this.address = address
         this.addressNumber = addressNumber
+        this.complement = complement
+        this.province = province
         this.city = city
         this.state = state
-        this.zipCode = zip_code
+        this.postalCode = postalCode
         this.defaultAddress = defaultAddress
         this.createdAt = createdAt
     }

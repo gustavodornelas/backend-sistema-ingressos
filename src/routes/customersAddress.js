@@ -56,9 +56,11 @@ router.post('/', async (req, res) => {
         req.body.name,
         req.body.address,
         req.body.addressNumber,
+        req.body.complement,
+        req.body.province,
         req.body.city,
         req.body.state,
-        req.body.zipCode,
+        req.body.postalCode,
         req.body.defaultAddress
     )
 
@@ -79,9 +81,11 @@ router.put('/', async (req, res) => {
         req.body.name,
         req.body.address,
         req.body.addressNumber,
+        req.body.complement,
+        req.body.province,
         req.body.city,
         req.body.state,
-        req.body.zipCode,
+        req.body.postalCode,
         req.body.defaultAddress
     )
 

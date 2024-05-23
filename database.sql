@@ -1,14 +1,11 @@
-DROP DATABASE sistema_ingressos;
-
-CREATE DATABASE sistema_ingressos;
-
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
+DROP DATABASE sistema_ingressos;
+CREATE DATABASE sistema_ingressos;
 
 -- Banco de dados: `sistema_ingressos`
-
 
 -- Estrutura para tabela `customers`
 CREATE TABLE `customers` (
@@ -16,6 +13,8 @@ CREATE TABLE `customers` (
   `asaas_id` varchar(20) DEFAULT NULL,
   `name` varchar(50) NOT NULL,
   `email` varchar(50) NOT NULL,
+  `phone` varchar(12) DEFAULT NULL,
+  `mobile_phone` varchar(12) DEFAULT NULL,
   `cpf_cnpj` varchar(15) DEFAULT NULL,
   `person_type` varchar(15) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
@@ -29,9 +28,11 @@ CREATE TABLE `customers_address` (
   `name` varchar(255) NOT NULL,
   `address` varchar(255) DEFAULT NULL,
   `address_number` int,
+  `complement` varchar(255) DEFAULT NULL,
+  `province` varchar(255) DEFAULT NULL,
   `city` varchar(255) DEFAULT NULL,
   `state` varchar(255) DEFAULT NULL,
-  `zip_code` varchar(20) DEFAULT NULL,
+  `postal_code` varchar(20) DEFAULT NULL,
   `default_address` varchar(15) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -60,10 +61,10 @@ CREATE TABLE `Tickets` (
   `event_id` int DEFAULT NULL,
   `eventDate_id` int DEFAULT NULL,
   `customer_id` int DEFAULT NULL,
+  `transaction_id` int DEFAULT NULL,
   `purchase_date` datetime DEFAULT NULL,
-  `seat_number` varchar(50) DEFAULT NULL,
+  `qr_code` varchar(50) DEFAULT NULL,
   `price` decimal(10,2) NOT NULL,
-  `status` enum('available','reserved','sold','cancelled','used') DEFAULT 'available',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -76,15 +77,19 @@ CREATE TABLE `tokens` (
   `logout_data` timestamp DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Estrutura para tabela `Transactions`
-CREATE TABLE `Transactions` (
+-- Estrutura para tabela `payments`
+CREATE TABLE `payments` (
   `id` int NOT NULL,
-  `ticket_id` int DEFAULT NULL,
   `customer_id` int DEFAULT NULL,
+  `event_id` int DEFAULT NULL,
   `asaas_id` varchar(20) DEFAULT NULL,
   `value` decimal(10,2) NOT NULL,
   `billing_type` varchar(50) DEFAULT NULL,
   `transaction_date` datetime NOT NULL,
+  `due_date` datetime NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `status` varchar(255) NOT NULL,
+  `invoice_url` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -94,116 +99,95 @@ CREATE TABLE `venues` (
   `name` varchar(255) NOT NULL,
   `address` varchar(255) DEFAULT NULL,
   `address_number` int,
+  `complement` varchar(255) DEFAULT NULL,
+  `province` varchar(255) DEFAULT NULL,
   `city` varchar(255) DEFAULT NULL,
   `state` varchar(255) DEFAULT NULL,
-  `zip_code` varchar(20) DEFAULT NULL,
+  `postal_code` varchar(20) DEFAULT NULL,
   `capacity` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Índices para tabelas despejadas
---
-
--- Índices de tabela `customers`
 ALTER TABLE `customers`
   ADD PRIMARY KEY (`id`);
 
--- Índices de tabela `customers_address`
 ALTER TABLE `customers_address`
   ADD PRIMARY KEY (`id`);
 
--- Índices de tabela `events`
 ALTER TABLE `events`
   ADD PRIMARY KEY (`id`),
   ADD KEY `FK_venues_id` (`venue_id`);
 
--- Índices de tabela `events_dates`
 ALTER TABLE `events_dates`
   ADD PRIMARY KEY (`id`),
   ADD KEY `FK_event_id` (`event_id`);
 
--- Índices de tabela `Tickets`
 ALTER TABLE `Tickets`
   ADD PRIMARY KEY (`id`),
   ADD KEY `FK_event_id2` (`event_id`),
   ADD KEY `FK_eventDate_id` (`eventDate_id`),
   ADD KEY `FK_customer_id3` (`customer_id`);
 
--- Índices de tabela `tokens`
 ALTER TABLE `tokens`
   ADD PRIMARY KEY (`id`),
   ADD KEY `FK_customer_id2` (`customer_id`);
 
--- Índices de tabela `Transactions`
-ALTER TABLE `Transactions`
+ALTER TABLE `payments`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `ticket_id` (`ticket_id`),
+  ADD KEY `event_id` (`event_id`),
   ADD KEY `customer_id` (`customer_id`);
 
--- Índices de tabela `venues`
 ALTER TABLE `venues`
   ADD PRIMARY KEY (`id`);
 
 -- AUTO_INCREMENT para tabelas despejadas
 
--- AUTO_INCREMENT de tabela `customers`
 ALTER TABLE `customers`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
--- AUTO_INCREMENT de tabela `customers_address`
 ALTER TABLE `customers_address`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
--- AUTO_INCREMENT de tabela `events`
 ALTER TABLE `events`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
--- AUTO_INCREMENT de tabela `events_dates`
 ALTER TABLE `events_dates`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
--- AUTO_INCREMENT de tabela `Tickets`
 ALTER TABLE `Tickets`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
--- AUTO_INCREMENT de tabela `tokens`
 ALTER TABLE `tokens`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
--- AUTO_INCREMENT de tabela `Transactions`
-ALTER TABLE `Transactions`
+ALTER TABLE `payments`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
--- AUTO_INCREMENT de tabela `venues`
 ALTER TABLE `venues`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 -- Restrições para tabelas despejadas
 
--- Restrições para tabela `customers_address`
 ALTER TABLE `customers_address`
   ADD CONSTRAINT `FK_customer_id2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`);
 
--- Restrições para tabelas `events`
 ALTER TABLE `events`
   ADD CONSTRAINT `FK_venues_id` FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`);
 
--- Restrições para tabelas `events_dates`
 ALTER TABLE `events_dates`
-  ADD CONSTRAINT `FK_event_id` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
+  ADD CONSTRAINT `FK_event_id1` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
--- Restrições para tabelas `Tickets`
 ALTER TABLE `Tickets`
   ADD CONSTRAINT `FK_customer_id3` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
   ADD CONSTRAINT `FK_event_id2` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`),
-  ADD CONSTRAINT `FK_eventDate_id` FOREIGN KEY (`eventDate_id`) REFERENCES `events_dates` (`id`);
+  ADD CONSTRAINT `FK_eventDate_id` FOREIGN KEY (`eventDate_id`) REFERENCES `events_dates` (`id`),
+  ADD CONSTRAINT `FK_transaction_id1` FOREIGN KEY (`transaction_id`) REFERENCES `payments` (`id`);
 
--- Restrições para tabelas `tokens`
 ALTER TABLE `tokens`
-  ADD CONSTRAINT `FK_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`);
+  ADD CONSTRAINT `FK_customer_id1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`);
 
--- Restrições para tabelas `Transactions`
-ALTER TABLE `Transactions`
-  ADD CONSTRAINT `Transactions_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `Tickets` (`id`),
-  ADD CONSTRAINT `Transactions_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`);
+ALTER TABLE `payments`
+  ADD CONSTRAINT `FK_customer_id4` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
+  ADD CONSTRAINT `FK_event_id3` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`); 
 COMMIT;

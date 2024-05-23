@@ -11,9 +11,9 @@ const checkExistingCustomerAddress = async (customerAddress) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'SELECT * FROM customers_address WHERE customer_id = ? and zip_code = ? and address_number = ?'
+        const sql = 'SELECT * FROM customers_address WHERE customer_id = ? and postal_code = ? and address_number = ?'
         const [query] = await connection.execute(sql, [customerAddress.customerId,
-                                                       customerAddress.zipCode,
+                                                       customerAddress.postalCode,
                                                        customerAddress.addressNumber
                                                     ])
         return query.length !== 0
@@ -36,20 +36,31 @@ const getAllCustomersAddress = async () => {
 
         const sql = 'SELECT * FROM customers_address'
         const [rows] = await connection.execute(sql)
+
+        // Verificar se algum endereço foi encontrado
+        if (rows.length === 0 ) {
+            throw new NotFoundError('Nenhum endereço encontrado');
+        }
+
         return rows.map(row => new CustomerAddress(
             row.id,
             row.customer_id,
             row.name,
             row.address,
             row.address_number,
+            row.complement,
+            row.province,
             row.city,
             row.state,
-            row.zip_code,
+            row.postal_code,
             row.default_address,
             row.created_at
         ))
     } catch (error) {
         console.log(error)
+        if (error instanceof NotFoundError) {
+            throw error
+        }
         throw new Error('Erro ao buscar endereços')
     } finally {
         if (connection) {
@@ -67,19 +78,31 @@ const getAllAddressToCustomer = async (customerId) => {
 
         const sql = 'SELECT * FROM customers_address WHERE customer_id = ?'
         const [rows] = await connection.execute(sql, [customerId])
+
+        // Verificar se algum endereço foi encontrado
+        if (rows.length === 0 ) {
+            throw new NotFoundError('Nenhum endereço encontrado');
+        }
+
         return rows.map(row => new CustomerAddress(
             row.id,
             row.customer_id,
             row.name,
             row.address,
             row.address_number,
+            row.complement,
+            row.province,
             row.city,
             row.state,
-            row.zip_code,
+            row.postal_code,
             row.default_address,
             row.created_at
         ))
     } catch (error) {
+        console.log(error)
+        if (error instanceof NotFoundError) {
+            throw error
+        }
         throw new Error('Erro ao buscar endereços')
     } finally {
         if (connection) {
@@ -97,22 +120,31 @@ const getDefaultCustomerAddress = async (customerId) => {
 
         const sql = 'SELECT * FROM customers_address WHERE customer_id = ? and default_address = "Y" '
         const [rows] = await connection.execute(sql, [customerId])
-        return rows.map(row => new CustomerAddress(
-            row.id,
-            row.customer_id,
-            row.name,
-            row.address,
-            row.address_number,
-            row.city,
-            row.state,
-            row.zip_code,
-            row.default_address,
-            row.created_at
-        ))
+
+        // Verificar se algum endereço foi encontrado
+        if (rows.length === 0 ) {
+            throw new NotFoundError('Nenhum endereço encontrado');
+        }
+
+        return new CustomerAddress(
+            rows[0].id,
+            rows[0].customer_id,
+            rows[0].name,
+            rows[0].address,
+            rows[0].address_number,
+            rows[0].complement,
+            rows[0].province,
+            rows[0].city,
+            rows[0].state,
+            rows[0].postal_code,
+            rows[0].default_address,
+            rows[0].created_at
+        )
     } catch (error) {
-
         console.log(error)
-
+        if (error instanceof NoContentError) {
+            throw error
+        }
         throw new Error('Erro ao buscar endereços')
     } finally {
         if (connection) {
@@ -138,7 +170,7 @@ const createNewCustomerAddress = async (customerAddress) => {
             throw new NotFoundError('Usuário não encontrado')
         }
 
-        // Verificando se o usuário existe
+        // Verificando se o endereço do usuário existe
         const existingCustomerAddress = await checkExistingCustomerAddress(customerAddress)
         if (existingCustomerAddress) {
             throw new DuplicateError("Endereço já cadastradado para o usuário")
@@ -146,18 +178,20 @@ const createNewCustomerAddress = async (customerAddress) => {
 
         // Verificando se o novo endereço é o padrão do cliente
         if (customerAddress.defaultAddress == 'Y') {
-            const sql = 'UPDATE customers_address SET default_address = null WHERE customer_id = ?'
+            const sql = 'UPDATE customers_address SET default_address = "" WHERE customer_id = ?'
             await connection.execute(sql, [customerAddress.customerId])
         }
 
-        sql = 'INSERT INTO customers_address (customer_id, name, address, address_number, city, state, zip_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        sql = 'INSERT INTO customers_address (customer_id, name, address, address_number, complement, province, city, state, postal_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         await connection.execute(sql, [customerAddress.customerId, 
                                        customerAddress.name,
                                        customerAddress.address,
                                        customerAddress.addressNumber,
+                                       customerAddress.complement,
+                                       customerAddress.province,
                                        customerAddress.city,
                                        customerAddress.state,
-                                       customerAddress.zipCode,
+                                       customerAddress.postalCode,
                                        customerAddress.defaultAddress]
                                     )
         await connection.commit()
@@ -186,19 +220,21 @@ const updateCustomerAddress = async (customerAddress) => {
 
         // Verificando se o novo endereço é o padrão do cliente
         if (customerAddress.defaultAddress == 'Y') {
-            const sql = 'UPDATE customers_address SET default_address = null WHERE customer_id = ?'
+            const sql = 'UPDATE customers_address SET default_address = "" WHERE customer_id = ?'
             await connection.execute(sql, [customerAddress.customerId])
         }
 
         // Atualizando endereço
-        const sql = 'UPDATE customers_address SET customer_id = ?, name = ?, address = ?, address_number = ?, city = ?, state = ?, zip_code = ?, default_address = ? WHERE id = ?'
+        const sql = 'UPDATE customers_address SET customer_id = ?, name = ?, address = ?, address_number = ?, complement = ?, province = ?, city = ?, state = ?, postal_code = ?, default_address = ? WHERE id = ?'
         const [ResultSetHeader] = await connection.execute(sql, [customerAddress.customerId, 
                                                                  customerAddress.name, 
                                                                  customerAddress.address, 
-                                                                 customerAddress.addressNumber, 
+                                                                 customerAddress.addressNumber,
+                                                                 customerAddress.complement,
+                                                                 customerAddress.province, 
                                                                  customerAddress.city, 
                                                                  customerAddress.state, 
-                                                                 customerAddress.zipCode, 
+                                                                 customerAddress.postalCode, 
                                                                  customerAddress.defaultAddress, 
                                                                  customerAddress.id]
                                                                 )

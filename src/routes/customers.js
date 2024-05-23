@@ -8,6 +8,7 @@ const customerService = require('../services/customerService')
 const NotFoundError = require('../CustomErrors/SystemError')
 const DuplicateError = require('../CustomErrors/DuplicateError')
 const handleErrorService = require('../services/handleErrorService')
+const asaasService = require('../services/asaasService')
 
 const router = express.Router()
 
@@ -43,12 +44,22 @@ router.post('/', async (req, res) => {
         null,
         req.body.name,
         req.body.email,
+        req.body.phone,
+        req.body.mobilePhone,
         req.body.cpfCnpj,
         req.body.personType,
         req.body.password,
-        req.body.asaasId)
+        null,
+        null)
+
     try {
-        const data = await customerService.createNewCustomer(customer)
+
+        // Criando cliente no asaas e armazenando o ID do cliente asaas
+        const asaasCustomer = await asaasService.createCustomer(customer)
+        customer.asaasId = asaasCustomer.id
+
+        // Criando cliente no banco de dados
+        await customerService.createNewCustomer(customer)
         res.json({ message: 'Usuário cadastrado com sucesso' })
     } catch (error) {
         handleErrorService(error, res)
@@ -58,17 +69,23 @@ router.post('/', async (req, res) => {
 // Altera um usuário
 router.put('/', async (req, res) => {
 
+    const customer = new Customer(
+        req.body.id,
+        req.body.name,
+        req.body.email,
+        req.body.phone,
+        req.body.mobilePhone,
+        req.body.cpfCnpj,
+        req.body.personType,
+        null,
+        req.body.asaasId)
+
     try {
 
-        const customer = new Customer(
-            req.body.id,
-            req.body.name,
-            req.body.email,
-            req.body.cpfCnpj,
-            req.body.personType,
-            req.body.password,
-            req.body.asaasId)
-
+        // atualizando cliente no asaas
+        await asaasService.updateCustomer(customer)
+        
+        // Atualizando cliente no banco de dados
         await customerService.updateCustomer(customer)
         res.status(200).send({ message: 'Usuário atualizado com sucesso' })
     } catch (error) {
