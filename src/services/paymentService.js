@@ -1,6 +1,7 @@
 const NotFoundError = require('../CustomErrors/SystemError')
 const dbPool = require('../config/dbPool')
 const Payment = require('../models/Payment')
+const Refund = require('../models/Refund')
 
 const getAllPayments = async () => {
     let connection = null
@@ -45,6 +46,49 @@ const getAllPayments = async () => {
 
 }
 
+const getPayment = async (id) => {
+    let connection = null
+
+    try {
+        connection = await dbPool.getConnection()
+
+        const sql = "SELECT * FROM payments WHERE id = ?"
+        const [rows] = await connection.execute(sql, [id])
+
+        // Verificar se alguma transação foi encontrada
+        if (rows.length === 0) {
+            throw new NotFoundError('Nenhum pagamento encontrada')
+        }
+
+        return new Payment(
+            rows[0].id,
+            rows[0].customer_id,
+            rows[0].event_id,
+            rows[0].asaas_id,
+            rows[0].value,
+            rows[0].billing_type,
+            rows[0].transaction_date,
+            rows[0].due_date,
+            rows[0].description,
+            rows[0].status,
+            rows[0].invoice_url,
+            rows[0].created_at
+        )
+
+    } catch (error) {
+        console.log(error)
+        if (error instanceof NotFoundError) {
+            throw error
+        }
+        throw new Error("Erro ao consultar pagamentos")
+    } finally {
+        if (connection) {
+            connection.release()
+        }
+    }
+
+}
+
 const createPayment = async (payment) => {
     let connection = null
     try {
@@ -74,7 +118,7 @@ const createPayment = async (payment) => {
         if (rows.length > 0) {
             return rows[0]  // Retorna o pagamento criado
         } else {
-            throw new Error('Erro ao recuperar o pagamento criado')
+            throw new Error('Erro ao recuperar o pagamento cadastrado')
         }
     } catch (error) {
         console.log(error)
@@ -86,8 +130,111 @@ const createPayment = async (payment) => {
     }
 }
 
+const refundPayment = async (refund) => {
+    let connection = null
+
+    try {
+        connection = await dbPool.getConnection()
+
+        // Inserindo estorno na tabela
+        const sqlInsert = 'INSERT INTO refunds (payment_id, status, value, refund_date) VALUES (?, ?, ?, ?)'
+        const [insertResult] = await connection.execute(sqlInsert, [
+            refund.paymentId,
+            refund.status,
+            refund.value,
+            refund.refundDate
+        ])
+
+        const refundId = insertResult.insertId
+
+        const sqlSelect = 'SELECT * FROM refunds WHERE id = ?'
+        const [rows] = await connection.execute(sqlSelect, [refundId])
+
+        // Verificando o estorno recuperado
+        if (rows.length === 0) {
+            throw new NotFoundError('Erro ao recuperar o estorno cadastrado')
+        }
+
+        return new Refund(
+            rows[0].id,
+            rows[0].payment_id,
+            rows[0].status,
+            rows[0].value,
+            rows[0].refund_date,
+            rows[0].created_at
+        );
+
+    } catch (error) {
+        console.log(error);
+        if (error instanceof NotFoundError) {
+            throw error;
+        }
+        throw new Error('Erro ao cadastrar estorno')
+    } finally {
+        if (connection) {
+            connection.release()
+        }
+    }
+}
+
+
+const changePaymentStatus = async (payment) => {
+    
+    let connection = null
+    
+    const sqlUpdate = 'UPDATE payments SET status = ? WHERE id = ?'
+    const [ ResultSetHeader ] = await connection.execute(sqlUpdate, [payment.status, payment.id])
+
+    if (ResultSetHeader.changedRows === 0) {
+        if (ResultSetHeader.affectedRows === 1) {
+            throw new NoContentError('Pagamento atualizado sem alterações')
+        }
+        throw new NotFoundError('Pagamento não encontrado')
+    }
+
+    const sqlSelect = 'SELECT * FROM payments WHERE id = ?'
+    const [ rows ] = await connection.execute(sqlSelect, [payment.id])
+
+    // Verificando se o pagamento foi retornado
+    if ( rows.length === 0) {
+        throw new NotFoundError('Erro ao recuperar o pagamento atualizado')
+    }
+
+    return new Payment(
+        rows[0].id,
+        rows[0].customer_id,
+        rows[0].asaas_id,
+        rows[0].event_id,
+        rows[0].asaas_id,
+        rows[0].value,
+        rows[0].billing_type,
+        rows[0].transaction_date,
+        rows[0].due_date,
+        rows[0].description,
+        rows[0].status,
+        rows[0].invoice_url,
+        rows[0].created_at
+    )
+
+    try {
+        connection = dbPool.getConnection()
+
+
+
+    } catch (error) {
+        console.log(error)
+        throw new Error('Erro ao atualizar o status do pagamento')
+    } finally {
+        if (connection) {
+            connection.refresh()
+        }
+    }
+}
+
 
 module.exports = {
     getAllPayments,
-    createPayment
+    getPayment,
+    createPayment,
+    refundPayment
 }

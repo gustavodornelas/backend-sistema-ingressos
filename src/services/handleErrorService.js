@@ -1,3 +1,4 @@
+const AsaasError = require("../CustomErrors/AsaasError")
 const DuplicateError = require("../CustomErrors/DuplicateError")
 const NoContentError = require("../CustomErrors/NoContentError")
 const NotFoundError = require("../CustomErrors/SystemError")
@@ -14,6 +15,8 @@ const handleErrorService = (error, res) => {
         return res.status(404).json({ message: error.message })
     } else if (error instanceof DuplicateError) {
         return res.status(409).json({ message: error.message })
+    } else if  (error instanceof AsaasError) {
+        return res.status(502).json({ message: error.message })
     } else {
         return res.status(500).json({ message: error.message })
     }

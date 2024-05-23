@@ -1,6 +1,7 @@
 const axios = require('axios');
 const dbPool = require('../config/dbPool');
 const NotFoundError = require('../CustomErrors/SystemError');
+const AsaasError = require('../CustomErrors/AsaasError');
 
 const API_KEY = '$aact_YTU5YTE0M2M2N2I4MTliNzk0YTI5N2U5MzdjNWZmNDQ6OjAwMDAwMDAwMDAwMDAwODA1MDY6OiRhYWNoXzc5NTc2YmZlLWNjOTgtNDJmYi1hZWJkLTA2OTMwYWM1OTBjMg==$aact_YTU5YTE0M2M2N2I4MTliNzk0YTI5N2U5MzdjNWZmNDQ6OjAwMDAwMDAwMDAwMDAwODA1MDY6OiRhYWNoXzc5NTc2YmZlLWNjOTgtNDJmYi1hZWJkLTA2OTMwYWM1OTBjMg==';
 const BASE_URL = 'https://sandbox.asaas.com/api/v3/';
@@ -31,8 +32,8 @@ const createCustomer = async (customerData) => {
         const res = await apiClient.post('/customers', data);
         return res.data;
     } catch (error) {
-        console.error(error);
-        throw new Error("Erro ao criar Cliente no Asaas");
+        console.log(error.response.data.errors[0])
+        throw new AsaasError(error)
     }
 }
 
@@ -52,8 +53,8 @@ const updateCustomer = async (customerData) => {
         // Atualizando cliente no asaas
         await apiClient.put('/customers/' + customerData.asaasId, data);
     } catch (error) {
-        console.log(error)
-        throw new Error("Erro ao atualizar Cliente no Asaas");
+        console.log(error.response.data.errors[0])
+        throw new AsaasError(error)
     }
 }
 
@@ -86,11 +87,12 @@ const createPayment = async (paymentData) => {
         const res = await apiClient.post('/payments', data)
         return res.data
     } catch (error) {
-        console.log(error)
         if (error instanceof NotFoundError) {
+            console.log(error)
             throw error;
         }
-        throw new Error("Erro ao criar Pagamento no Asaas");
+        console.log(error.response.data.errors[0])
+        throw new AsaasError(error)
     } finally {
         if (connection) {
             connection.release()
@@ -98,9 +100,28 @@ const createPayment = async (paymentData) => {
     }
 }
 
+const refundPayment = async (payment) => {
+
+    try {
+        const id = payment.asaasId
+
+        const data = {
+            value: payment.value,
+        }
+
+        const res = await apiClient.post('/payments/' + id + '/refund', data)
+        return res.data.refunds[0]
+    } catch (error) {
+        console.log(error)
+        throw new AsaasError(error)
+    }
+
+}
+
 // Export the functions
 module.exports = {
     createCustomer,
     updateCustomer,
-    createPayment
+    createPayment,
+    refundPayment
 };

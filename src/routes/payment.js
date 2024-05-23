@@ -5,12 +5,24 @@ const router = express.Router()
 const paymentService = require('../services/paymentService')
 const asaasService = require('../services/asaasService')
 const Payment = require('../models/Payment')
+const Refund = require('../models/Refund')
 
 router.get('/', async (req, res) => {
     try {
         const data = await paymentService.getAllPayments()
         res.json({message: "Consulta concluida", data})
     } catch (error) {
+        handleErrorService(error, res)
+    }
+})
+
+router.get('/:id', async (req, res) => {
+    try {
+         
+        const id = req.params.id
+        const data = await paymentService.getPayment(id)
+        res.json({ message: "Consulta concluida", data })
+    }catch(error) {
         handleErrorService(error, res)
     }
 })
@@ -43,6 +55,35 @@ router.post('/', async (req, res) => {
     } catch (error) {
         handleErrorService(error, res)
     }
+})
+
+router.post('/:id/refund', async (req, res) => {
+
+    try {
+
+        // Recuperando pagamento
+        const id = req.params.id
+        const payment = await paymentService.getPayment(id)
+
+        // Gerando estorno no Asaas
+        const response = await asaasService.refundPayment(payment)
+
+        // Criando estorno no banco de dados
+        const refund = new Refund(
+            null,
+            payment.id,
+            response.status,
+            response.value,
+            response.dateCreated,
+            null
+        )
+
+        const data = await paymentService.refundPayment(refund)
+        res.json( { message: "Pagamento estornado", data })
+    } catch (error) {
+        handleErrorService(error, res)
+    }
+
 })
 
 module.exports = router
