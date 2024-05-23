@@ -2,7 +2,6 @@ class Payment {
     constructor (id = null, customerId, asaasCustomerId, eventId, asaasId = null, value, billingType, transactionDate, dueDate, description, status, invoiceUrl, createdAt = null) {
         this.id = id
         this.customerId = customerId
-        this.asaasCustomerId = asaasCustomerId
         this.eventId = eventId
         this.asaasId = asaasId
         this.value = value

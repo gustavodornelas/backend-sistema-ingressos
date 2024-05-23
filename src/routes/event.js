@@ -35,8 +35,8 @@ router.post('/', async (req, res) => {
     )
 
     try {
-        await eventService.createNewEvent(event)
-        res.json({ message: "Evento cadastrado com sucesso" })
+        const data = await eventService.createNewEvent(event)
+        res.json({ message: "Evento cadastrado com sucesso", data })
     } catch (error) {
         handleErrorService(error, res)
     }
@@ -52,8 +52,8 @@ router.put('/', async (req, res) => {
     )
 
     try {
-        await eventService.updateEvent(event)
-        res.json({ message: "Evento atualizado com sucesso" })
+        const data = await eventService.updateEvent(event)
+        res.json({ message: "Evento atualizado com sucesso", data })
     } catch (error) {
         handleErrorService(error, res)
     }

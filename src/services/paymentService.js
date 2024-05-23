@@ -6,7 +6,7 @@ const getAllPayments = async () => {
     let connection = null
 
     try {
-        connection = dbPool.getConnection()
+        connection = await dbPool.getConnection()
 
         const sql = "SELECT * FROM payments"
         const [rows] = await connection.execute(sql)
@@ -39,7 +39,7 @@ const getAllPayments = async () => {
         throw new Error("Erro ao consultar pagamentos")
     } finally {
         if (connection) {
-            await connection.release()
+            connection.release()
         }
     }
 
@@ -50,30 +50,42 @@ const createPayment = async (payment) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'INSERT INTO payments (customer_id, event_id, asaas_id, value, billing_type, transaction_date, due_date, description, status, invoice_url) '
-                                + 'VALUES (?, ?, ?, ?, ?, now(), now() + INTERVAL 30 DAY, ?, ?, ?)'
-        const [ResultSetHeader] = await connection.execute(sql, [
+        // Insert the payment into the database
+        const sqlInsert = `
+            INSERT INTO payments (
+                customer_id, event_id, asaas_id, value, billing_type, transaction_date, due_date, description, status, invoice_url
+            ) VALUES (?, ?, ?, ?, ?, now(), now() + INTERVAL 30 DAY, ?, ?, ?)`
+        const [insertResult] = await connection.execute(sqlInsert, [
             payment.customerId,
             payment.eventId,
             payment.asaasId,
-            payment.value, 
+            payment.value,
             payment.billingType,
             payment.description,
             payment.status,
             payment.invoiceUrl
         ])
 
-        payment.id = ResultSetHeader.insertId
-        return payment
+        // Retrieve the newly created payment row using the last insert id
+        const newPaymentId = insertResult.insertId
+        const sqlSelect = 'SELECT * FROM payments WHERE id = ?'
+        const [rows] = await connection.execute(sqlSelect, [newPaymentId])
+
+        if (rows.length > 0) {
+            return rows[0]  // Retorna o pagamento criado
+        } else {
+            throw new Error('Erro ao recuperar o pagamento criado')
+        }
     } catch (error) {
         console.log(error)
         throw new Error('Erro ao cadastrar pagamento')
     } finally {
         if (connection) {
-            await connection.release()
+            connection.release()
         }
     }
 }
+
 
 module.exports = {
     getAllPayments,

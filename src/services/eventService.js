@@ -77,12 +77,28 @@ const createNewEvent = async (event) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'INSERT INTO events (name, description, venue_id) VALUES (?, ?, ?)'
-        await connection.execute(sql, [
+        const sqlInsert = 'INSERT INTO events (name, description, venue_id) VALUES (?, ?, ?)'
+        const [insertResult] = await connection.execute(sqlInsert, [
             event.name,
             event.description,
             event.venueId,
         ])
+
+        const eventId = insertResult.insertId
+        const sqlSelect = 'SELECT * FROM events WHERE id = ?'
+        const [rows] = await connection.execute(sqlSelect,[eventId])
+
+        if (rows.length === 0 ) {
+            throw new NotFoundError('Erro ao retornar o evento cadastrado')
+        }
+
+        return new Event(
+            rows[0].id,
+            rows[0].name,
+            rows[0].description,
+            rows[0].venue_id,
+            rows[0].created_at
+        ) // Retorna o evento criado
 
     } catch (error) {
         console.log(error)
@@ -115,6 +131,23 @@ const updateEvent = async (event) => {
             }
             throw new NotFoundError('Evento não encontrado')
         }
+
+        const eventId = event.id
+        const sqlSelect = 'SELECT * FROM events WHERE id = ?'
+        const [rows] = await connection.execute(sqlSelect,[eventId])
+
+        if (rows.length === 0 ) {
+            throw new NotFoundError('Erro ao retornar o evento cadastrado')
+        }
+
+        return new Event(
+            rows[0].id,
+            rows[0].name,
+            rows[0].description,
+            rows[0].venue_id,
+            rows[0].created_at
+        ) // Retorna o evento criado
+
 
     } catch (error) {
         console.log(error)

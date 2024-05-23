@@ -13,9 +13,9 @@ const checkExistingCustomerAddress = async (customerAddress) => {
 
         const sql = 'SELECT * FROM customers_address WHERE customer_id = ? and postal_code = ? and address_number = ?'
         const [query] = await connection.execute(sql, [customerAddress.customerId,
-                                                       customerAddress.postalCode,
-                                                       customerAddress.addressNumber
-                                                    ])
+        customerAddress.postalCode,
+        customerAddress.addressNumber
+        ])
         return query.length !== 0
     } catch (error) {
         console.log(error)
@@ -38,7 +38,7 @@ const getAllCustomersAddress = async () => {
         const [rows] = await connection.execute(sql)
 
         // Verificar se algum endereço foi encontrado
-        if (rows.length === 0 ) {
+        if (rows.length === 0) {
             throw new NotFoundError('Nenhum endereço encontrado');
         }
 
@@ -80,7 +80,7 @@ const getAllAddressToCustomer = async (customerId) => {
         const [rows] = await connection.execute(sql, [customerId])
 
         // Verificar se algum endereço foi encontrado
-        if (rows.length === 0 ) {
+        if (rows.length === 0) {
             throw new NotFoundError('Nenhum endereço encontrado');
         }
 
@@ -122,7 +122,7 @@ const getDefaultCustomerAddress = async (customerId) => {
         const [rows] = await connection.execute(sql, [customerId])
 
         // Verificar se algum endereço foi encontrado
-        if (rows.length === 0 ) {
+        if (rows.length === 0) {
             throw new NotFoundError('Nenhum endereço encontrado');
         }
 
@@ -160,11 +160,11 @@ const createNewCustomerAddress = async (customerAddress) => {
     try {
         connection = await dbPool.getConnection()
         await connection.beginTransaction()
-        
+
         // Consulte o banco de dados para obter o usuário
-        let sql = 'SELECT * FROM customers WHERE id = ?'
-        const [rows] = await connection.execute(sql, [customerAddress.customerId])
-                
+        const sqlSelect1 = 'SELECT * FROM customers WHERE id = ?'
+        let [rows] = await connection.execute(sqlSelect1, [customerAddress.customerId])
+
         // Verifique se foi encontrado algum usuário
         if (rows.length === 0) {
             throw new NotFoundError('Usuário não encontrado')
@@ -178,23 +178,49 @@ const createNewCustomerAddress = async (customerAddress) => {
 
         // Verificando se o novo endereço é o padrão do cliente
         if (customerAddress.defaultAddress == 'Y') {
-            const sql = 'UPDATE customers_address SET default_address = "" WHERE customer_id = ?'
-            await connection.execute(sql, [customerAddress.customerId])
+            const sqlUpdate = 'UPDATE customers_address SET default_address = "" WHERE customer_id = ?'
+            await connection.execute(sqlUpdate, [customerAddress.customerId])
         }
 
-        sql = 'INSERT INTO customers_address (customer_id, name, address, address_number, complement, province, city, state, postal_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        await connection.execute(sql, [customerAddress.customerId, 
-                                       customerAddress.name,
-                                       customerAddress.address,
-                                       customerAddress.addressNumber,
-                                       customerAddress.complement,
-                                       customerAddress.province,
-                                       customerAddress.city,
-                                       customerAddress.state,
-                                       customerAddress.postalCode,
-                                       customerAddress.defaultAddress]
-                                    )
+        const sqlInsert = 'INSERT INTO customers_address (customer_id, name, address, address_number, complement, province, city, state, postal_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        const [insertResult] = await connection.execute(sqlInsert, [customerAddress.customerId,
+                                                                    customerAddress.name,
+                                                                    customerAddress.address,
+                                                                    customerAddress.addressNumber,
+                                                                    customerAddress.complement,
+                                                                    customerAddress.province,
+                                                                    customerAddress.city,
+                                                                    customerAddress.state,
+                                                                    customerAddress.postalCode,
+                                                                    customerAddress.defaultAddress]
+                                                                    )
+
+        const customerId = insertResult.insertId
+
+        const sqlSelect2 = 'SELECT * FROM customers_address WHERE id = ?'
+        const [rows2] = await connection.execute(sqlSelect2, [customerId])
+
+        // Verificando se o endereço cadastrado foi recuperado
+        if (rows2.length === 0) {
+            throw new NotFoundError('Erro ao recuperar o usuário cadastrado')
+        }
+
         await connection.commit()
+
+        return new CustomerAddress(
+            rows2[0].id,
+            rows2[0].customer_id,
+            rows2[0].name,
+            rows2[0].address,
+            rows2[0].address_number,
+            rows2[0].complement,
+            rows2[0].province,
+            rows2[0].city,
+            rows2[0].state,
+            rows2[0].postal_code,
+            rows2[0].default_address,
+            rows2[0].created_at
+        )  // Retorna o endereço criado
 
     } catch (error) {
         console.log(error)
@@ -226,19 +252,19 @@ const updateCustomerAddress = async (customerAddress) => {
 
         // Atualizando endereço
         const sql = 'UPDATE customers_address SET customer_id = ?, name = ?, address = ?, address_number = ?, complement = ?, province = ?, city = ?, state = ?, postal_code = ?, default_address = ? WHERE id = ?'
-        const [ResultSetHeader] = await connection.execute(sql, [customerAddress.customerId, 
-                                                                 customerAddress.name, 
-                                                                 customerAddress.address, 
-                                                                 customerAddress.addressNumber,
-                                                                 customerAddress.complement,
-                                                                 customerAddress.province, 
-                                                                 customerAddress.city, 
-                                                                 customerAddress.state, 
-                                                                 customerAddress.postalCode, 
-                                                                 customerAddress.defaultAddress, 
-                                                                 customerAddress.id]
-                                                                )
-        
+        const [ResultSetHeader] = await connection.execute(sql, [customerAddress.customerId,
+                                                                customerAddress.name,
+                                                                customerAddress.address,
+                                                                customerAddress.addressNumber,
+                                                                customerAddress.complement,
+                                                                customerAddress.province,
+                                                                customerAddress.city,
+                                                                customerAddress.state,
+                                                                customerAddress.postalCode,
+                                                                customerAddress.defaultAddress,
+                                                                customerAddress.id]
+        )
+
         // Verificando se houve alterações
         if (ResultSetHeader.changedRows === 0) {
             if (ResultSetHeader.affectedRows === 1) {
@@ -246,8 +272,32 @@ const updateCustomerAddress = async (customerAddress) => {
             }
             throw new NotFoundError('Local não encontrado')
         }
-        
-        connection.commit()
+
+        const sqlSelect2 = 'SELECT * FROM customers_address WHERE id = ?'
+        const [rows2] = await connection.execute(sqlSelect2, [customerAddress.id])
+
+        // Verificando se o endereço atualizado foi recuperado
+        if (rows2.length === 0) {
+            throw new NotFoundError('Erro ao recuperar o usuário atualizado')
+        }
+
+        await connection.commit()
+
+        return new CustomerAddress(
+            rows2[0].id,
+            rows2[0].customer_id,
+            rows2[0].name,
+            rows2[0].address,
+            rows2[0].address_number,
+            rows2[0].complement,
+            rows2[0].province,
+            rows2[0].city,
+            rows2[0].state,
+            rows2[0].postal_code,
+            rows2[0].default_address,
+            rows2[0].created_at
+        )  // Retorna o endereço criado
+
     } catch (error) {
         console.log(error)
         await connection.rollback()
@@ -291,10 +341,11 @@ const deleteCustomerAddress = async (customerAddressId) => {
     }
 }
 
-module.exports = { getAllCustomersAddress, 
-                   getAllAddressToCustomer, 
-                   getDefaultCustomerAddress,
-                   createNewCustomerAddress,
-                   updateCustomerAddress,
-                   deleteCustomerAddress
-                }
+module.exports = {
+    getAllCustomersAddress,
+    getAllAddressToCustomer,
+    getDefaultCustomerAddress,
+    createNewCustomerAddress,
+    updateCustomerAddress,
+    deleteCustomerAddress
+}

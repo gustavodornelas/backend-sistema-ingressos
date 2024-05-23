@@ -59,8 +59,8 @@ router.post('/', async (req, res) => {
         customer.asaasId = asaasCustomer.id
 
         // Criando cliente no banco de dados
-        await customerService.createNewCustomer(customer)
-        res.json({ message: 'Usuário cadastrado com sucesso' })
+        const data = await customerService.createNewCustomer(customer)
+        res.json({ message: 'Usuário cadastrado com sucesso', data })
     } catch (error) {
         handleErrorService(error, res)
     }
@@ -86,8 +86,8 @@ router.put('/', async (req, res) => {
         await asaasService.updateCustomer(customer)
         
         // Atualizando cliente no banco de dados
-        await customerService.updateCustomer(customer)
-        res.status(200).send({ message: 'Usuário atualizado com sucesso' })
+        const data = await customerService.updateCustomer(customer)
+        res.json({ message: 'Usuário atualizado com sucesso', data })
     } catch (error) {
         handleErrorService(error, res)
     }

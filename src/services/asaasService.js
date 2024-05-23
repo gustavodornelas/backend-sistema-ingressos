@@ -59,14 +59,29 @@ const updateCustomer = async (customerData) => {
 
 const createPayment = async (paymentData) => {
 
+    let connection = null
+
     try {
+
+        connection = await dbPool.getConnection()
+        const sql = 'SELECT * FROM customers WHERE id = ?'
+        const [rows] = await connection.execute(sql, [paymentData.customerId])
+
+        // Verificar se o usuário foi encontrado
+        if (rows.length === 0) {
+            throw new NotFoundError('Usuário não encontrado')
+        }
+
+        const asaasCustomerId = rows[0].asaas_id
+
         const data = {
             billingType: paymentData.billingType,
             value: paymentData.value,
-            customer: paymentData.asaasCustomerId,
+            customer: asaasCustomerId,
             dueDate: paymentData.dueDate,
             description: paymentData.description
         }
+
 
         const res = await apiClient.post('/payments', data)
         return res.data
@@ -76,7 +91,11 @@ const createPayment = async (paymentData) => {
             throw error;
         }
         throw new Error("Erro ao criar Pagamento no Asaas");
-    } 
+    } finally {
+        if (connection) {
+            connection.release()
+        }
+    }
 }
 
 // Export the functions

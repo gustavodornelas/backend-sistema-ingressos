@@ -41,8 +41,8 @@ router.post('/', async (req, res) => {
     )
 
     try {
-        await venueService.createNewVenue(venue)
-        res.json({ message: "Local cadastrado com sucesso" })
+       const data = await venueService.createNewVenue(venue)
+        res.json({ message: "Local cadastrado com sucesso", data })
     } catch (error) {
         handleErrorService(error, res)
     }
@@ -64,8 +64,8 @@ router.put('/', async (req, res) => {
     )
 
     try {
-        await venueService.updateVenue(venue)
-        res.json({message: "Local atualizado com sucesso"})
+        const data = await venueService.updateVenue(venue)
+        res.json({ message: "Local atualizado com sucesso", data })
     } catch (error) {
         handleErrorService(error, res)
     }

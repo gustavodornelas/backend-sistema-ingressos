@@ -66,7 +66,7 @@ router.post('/', async (req, res) => {
 
     try {
         const data = await customerAddressService.createNewCustomerAddress(customerAddress)
-        res.json({ message: 'Endereço cadastrado com sucesso' })
+        res.json({ message: 'Endereço cadastrado com sucesso', data })
     } catch (error) {
         handleErrorService(error, res)
     }
@@ -90,8 +90,8 @@ router.put('/', async (req, res) => {
     )
 
     try {
-        await customerAddressService.updateCustomerAddress(customerAddress)
-        res.status(200).send({ message: 'Endereço atualizado com sucesso' })
+        const data = await customerAddressService.updateCustomerAddress(customerAddress)
+        res.status(200).send({ message: 'Endereço atualizado com sucesso', data })
     } catch (error) {
         handleErrorService(error, res)
     }
