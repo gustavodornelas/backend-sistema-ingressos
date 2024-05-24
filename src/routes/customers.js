@@ -3,17 +3,18 @@ const express = require('express')
 // Classe Customer e serviço para logica
 const Customer = require('../models/Customer')
 const customerService = require('../services/customerService')
+const asaasService = require('../services/asaasService')
 
 // Erros customizados
-const NotFoundError = require('../CustomErrors/SystemError')
+const NotFoundError = require('../CustomErrors/NotFoundError')
 const DuplicateError = require('../CustomErrors/DuplicateError')
-const handleErrorService = require('../services/handleErrorService')
-const asaasService = require('../services/asaasService')
+const handleErrorService = require('../utils/handleErrorService')
+const tokenVerify = require('../utils/tokenVerify')
 
 const router = express.Router()
 
 // Buscar todos os usuários
-router.get('/', async (req, res) => {
+router.get('/', tokenVerify, async (req, res) => {
 
     try {
         const data = await customerService.getAllCustomers()
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 })
 
 // Busca um único usuário
-router.get('/:id', async (req, res) => {
+router.get('/:id', tokenVerify, async (req, res) => {
 
     const customerId = req.params.id
 
@@ -67,7 +68,7 @@ router.post('/', async (req, res) => {
 })
 
 // Altera um usuário
-router.put('/', async (req, res) => {
+router.put('/', tokenVerify, async (req, res) => {
 
     const customer = new Customer(
         req.body.id,
@@ -95,7 +96,7 @@ router.put('/', async (req, res) => {
 })
 
 // Deleta um usuário
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', tokenVerify, async (req, res) => {
     const id = req.params.id
 
     try {
@@ -108,7 +109,7 @@ router.delete('/:id', async (req, res) => {
 })
 
 // Alterar senha do usuário
-router.put('/changePassword', async (req, res) => {
+router.put('/changePassword', tokenVerify, async (req, res) => {
 
     try {
         const customer = new Customer(

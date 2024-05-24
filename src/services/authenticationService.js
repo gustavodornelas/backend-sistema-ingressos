@@ -29,12 +29,16 @@ const login = async (email, password) => {
             row.id,
             row.name,
             row.email,
+            row.phone,
+            row.mobile_phone,
             row.cpf_cnpj,
             row.personType,
-            row.password, // Limpando campo de senha
+            row.password,
             row.asaas_id,
             row.created_at
         )
+
+        console.log('compare: ' + password + " and: " + customer.password)
         
         // Verifique a senha usando o campo correto (senha)
         const passwordVerify = await bcrypt.compare(password, customer.password)

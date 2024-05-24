@@ -1,4 +1,4 @@
-const NotFoundError = require('../CustomErrors/SystemError')
+const NotFoundError = require('../CustomErrors/NotFoundError')
 const dbPool = require('../config/dbPool')
 const Payment = require('../models/Payment')
 const Refund = require('../models/Refund')

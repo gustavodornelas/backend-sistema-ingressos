@@ -1,5 +1,5 @@
 const NoContentError = require('../CustomErrors/NoContentError')
-const NotFoundError = require('../CustomErrors/SystemError')
+const NotFoundError = require('../CustomErrors/NotFoundError')
 const dbPool = require('../config/dbPool')
 const Venue = require('../models/Venue')
 

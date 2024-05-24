@@ -1,6 +1,6 @@
 const DuplicateError = require('../CustomErrors/DuplicateError')
 const NoContentError = require('../CustomErrors/NoContentError')
-const NotFoundError = require('../CustomErrors/SystemError')
+const NotFoundError = require('../CustomErrors/NotFoundError')
 
 const dbPool = require('../config/dbPool')
 const CustomerAddress = require('../models/CustomerAddress')

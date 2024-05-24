@@ -7,7 +7,7 @@ const dbPool = require('../config/dbPool')
 const NoContentError = require('../CustomErrors/NoContentError')
 const UnauthorizedError = require('../CustomErrors/UnauthorizedError')
 const DuplicateError = require('../CustomErrors/DuplicateError')
-const NotFoundError = require('../CustomErrors/SystemError')
+const NotFoundError = require('../CustomErrors/NotFoundError')
 
 // Função para verificar se o cliente já existe no banco de dados
 const checkExistingCustomer = async (customer) => {

@@ -2,10 +2,11 @@ const express = require('express')
 const router = express.Router()
 
 const venueService = require('../services/venueService')
-const handleErrorService = require('../services/handleErrorService')
+const handleErrorService = require('../utils/handleErrorService')
 const Venue = require('../models/Venue')
+const tokenVerify = require('../utils/tokenVerify')
 
-router.get('/', async (req, res) => {
+router.get('/', tokenVerify, async (req, res) => {
     try {
         const data = await venueService.getAllVenues()
         res.json({ message: "Consulta concluida", data })
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
     }
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', tokenVerify, async (req, res) => {
     const id = req.params.id
 
     try {
@@ -25,7 +26,7 @@ router.get('/:id', async (req, res) => {
     }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', tokenVerify, async (req, res) => {
     const venue = new Venue(
         null,
         req.body.name,
@@ -48,7 +49,7 @@ router.post('/', async (req, res) => {
     }
 })
 
-router.put('/', async (req, res) => {
+router.put('/', tokenVerify, async (req, res) => {
     const venue = new Venue(
         req.body.id,
         req.body.name,
@@ -71,7 +72,7 @@ router.put('/', async (req, res) => {
     }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', tokenVerify, async (req, res) => {
     const id = req.params.id
 
     try {

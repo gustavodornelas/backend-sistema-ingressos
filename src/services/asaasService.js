@@ -1,6 +1,6 @@
 const axios = require('axios');
 const dbPool = require('../config/dbPool');
-const NotFoundError = require('../CustomErrors/SystemError');
+const NotFoundError = require('../CustomErrors/NotFoundError');
 const AsaasError = require('../CustomErrors/AsaasError');
 
 const API_KEY = '$aact_YTU5YTE0M2M2N2I4MTliNzk0YTI5N2U5MzdjNWZmNDQ6OjAwMDAwMDAwMDAwMDAwODA1MDY6OiRhYWNoXzc5NTc2YmZlLWNjOTgtNDJmYi1hZWJkLTA2OTMwYWM1OTBjMg==$aact_YTU5YTE0M2M2N2I4MTliNzk0YTI5N2U5MzdjNWZmNDQ6OjAwMDAwMDAwMDAwMDAwODA1MDY6OiRhYWNoXzc5NTc2YmZlLWNjOTgtNDJmYi1hZWJkLTA2OTMwYWM1OTBjMg==';

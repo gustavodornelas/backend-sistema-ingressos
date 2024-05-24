@@ -1,13 +1,14 @@
 const express = require('express')
-const handleErrorService = require('../services/handleErrorService')
+const handleErrorService = require('../utils/handleErrorService')
 const router = express.Router()
 
 const paymentService = require('../services/paymentService')
 const asaasService = require('../services/asaasService')
 const Payment = require('../models/Payment')
 const Refund = require('../models/Refund')
+const tokenVerify = require('../utils/tokenVerify')
 
-router.get('/', async (req, res) => {
+router.get('/', tokenVerify, async (req, res) => {
     try {
         const data = await paymentService.getAllPayments()
         res.json({message: "Consulta concluida", data})
@@ -16,7 +17,7 @@ router.get('/', async (req, res) => {
     }
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', tokenVerify, async (req, res) => {
     try {
          
         const id = req.params.id
@@ -27,7 +28,7 @@ router.get('/:id', async (req, res) => {
     }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', tokenVerify, async (req, res) => {
     try {
 
         const payment = new Payment(
@@ -57,7 +58,7 @@ router.post('/', async (req, res) => {
     }
 })
 
-router.post('/:id/refund', async (req, res) => {
+router.post('/:id/refund', tokenVerify, async (req, res) => {
 
     try {
 

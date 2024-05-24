@@ -5,12 +5,13 @@ const CustomerAddress = require('../models/CustomerAddress')
 const customerAddressService = require('../services/customerAddressService')
 
 // Erros customizados
-const handleErrorService = require('../services/handleErrorService')
+const handleErrorService = require('../utils/handleErrorService')
+const tokenVerify = require('../utils/tokenVerify')
 
 const router = express.Router()
 
 // Buscar todos os endereços
-router.get('/', async (req, res) => {
+router.get('/', tokenVerify, async (req, res) => {
 
     try {
         const data = await customerAddressService.getAllCustomersAddress()
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
 })
 
 // Buscar todos os endereços de um usuário
-router.get('/:id', async (req, res) => {
+router.get('/:id', tokenVerify, async (req, res) => {
 
     const customerId = req.params.id
 
@@ -34,7 +35,7 @@ router.get('/:id', async (req, res) => {
 })
 
 // buscar o endereço padrão do usuário
-router.get('/default/:id', async (req, res) => {
+router.get('/default/:id', tokenVerify, async (req, res) => {
 
     const customerId = req.params.id
 
@@ -48,7 +49,7 @@ router.get('/default/:id', async (req, res) => {
 })
 
 // Cadastrar um novo endereço
-router.post('/', async (req, res) => {
+router.post('/', tokenVerify, async (req, res) => {
 
     const customerAddress = new CustomerAddress(
         null,
@@ -73,7 +74,7 @@ router.post('/', async (req, res) => {
 })
 
 // Alterar um endereo
-router.put('/', async (req, res) => {
+router.put('/', tokenVerify, async (req, res) => {
 
     const customerAddress = new CustomerAddress(
         req.body.id,
@@ -99,7 +100,7 @@ router.put('/', async (req, res) => {
 })
 
 // Deletar um usuário
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', tokenVerify, async (req, res) => {
     const id = req.params.id
 
     try {

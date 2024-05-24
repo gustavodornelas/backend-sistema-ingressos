@@ -4,7 +4,7 @@ const router = express.Router()
 const authenticationService = require('../services/authenticationService')
 
 const Customer = require('../models/Customer')
-const handleErrorService = require('../services/handleErrorService')
+const handleErrorService = require('../utils/handleErrorService')
 
 // Rota para login
 router.post('/login', async (req, res) => {
