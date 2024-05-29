@@ -2,16 +2,11 @@ const UnauthorizedError = require('../CustomErrors/UnauthorizedError');
 const dbPool = require('../config/dbPool')
 
 const tokenVerify = async (req, res, next) => {
-    console.log('testando token')
     let connection = null
     try {
 
         connection = await dbPool.getConnection()
-
         const token = req.headers.authorization
-
-        console.log (req.headers)
-
         if (!token) {
             throw new UnauthorizedError('Token não fornecido')
         }

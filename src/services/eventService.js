@@ -3,27 +3,32 @@ const NotFoundError = require('../CustomErrors/NotFoundError')
 const dbPool = require('../config/dbPool')
 const Event = require('../models/Event')
 
+// Consultar todos os eventos ativos
 const getAllEvents = async () => {
     let connection = null
 
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'SELECT * FROM events'
-        const [rows] = await connection.execute(sql)
+        const sql = 'SELECT * FROM events WHERE status = ?'
+        const [rows] = await connection.execute(sql, [ "ACTIVE" ])
 
         // Verificando de algum evento foi encontrado
         if (rows.length === 0 ) {
             throw new NotFoundError('Nenhum evento encontrado')
         }
 
-        return rows.map(row => new Event(
+        const events = rows.map(row => new Event(
             row.id,
             row.name,
             row.description,
             row.venue_id,
+            row.status,
             row.created_at,
         ))
+
+        return { events }
+
     } catch (error) {
         console.log(error)
         if(error instanceof NotFoundError) {
@@ -37,6 +42,7 @@ const getAllEvents = async () => {
     }
 }
 
+// Consultar um unico evento
 const getEvent = async (id) => {
     let connection = null
     try {
@@ -47,17 +53,21 @@ const getEvent = async (id) => {
 
         // Verifique se o evento foi encontrado
         if (rows.length === 0) {
-            throw new NotFoundError('Cliente não encontrado')
+            throw new NotFoundError('Evento não encontrado')
         }
 
         const row = rows[0]
-        return new Event(
+        const event = new Event(
             row.id,
             row.name,
             row.description,
             row.venue_id,
+            row.status,
             row.created_at,
         )
+
+        return { event }
+
     } catch (error) {
         console.log(error)
         if (error instanceof NotFoundError) {
@@ -71,17 +81,19 @@ const getEvent = async (id) => {
     }
 }
 
-const createNewEvent = async (event) => {
+// Cadastrar um evento
+const createNewEvent = async (newEvent) => {
     let connection = null
 
     try {
         connection = await dbPool.getConnection()
 
-        const sqlInsert = 'INSERT INTO events (name, description, venue_id) VALUES (?, ?, ?)'
+        const sqlInsert = 'INSERT INTO events (name, description, venue_id, status) VALUES (?, ?, ?, ?)'
         const [insertResult] = await connection.execute(sqlInsert, [
-            event.name,
-            event.description,
-            event.venueId,
+            newEvent.name,
+            newEvent.description,
+            newEvent.venueId,
+            newEvent.status ? event.status : "ACTIVE"
         ])
 
         const eventId = insertResult.insertId
@@ -92,13 +104,17 @@ const createNewEvent = async (event) => {
             throw new NotFoundError('Erro ao retornar o evento cadastrado')
         }
 
-        return new Event(
-            rows[0].id,
-            rows[0].name,
-            rows[0].description,
-            rows[0].venue_id,
-            rows[0].created_at
-        ) // Retorna o evento criado
+        const row = rows[0]
+        const event =  new Event(
+            row.id,
+            row.name,
+            row.description,
+            row.venue_id,
+            row.status,
+            row.created_at
+        )
+
+        return { event }
 
     } catch (error) {
         console.log(error)
@@ -110,18 +126,20 @@ const createNewEvent = async (event) => {
     }
 }
 
-const updateEvent = async (event) => {
+// Atualizar um evento
+const updateEvent = async (newEvent) => {
     let connection = null
 
     try {
         connection = await dbPool.getConnection()
 
-        const sql = 'UPDATE events SET name = ?, description = ?, venue_id = ? WHERE id = ?'
+        const sql = 'UPDATE events SET name = ?, description = ?, venue_id = ?, status = ? WHERE id = ?'
         const [ResultSetHeader] = await connection.execute(sql, [
-            event.name,
-            event.description,
-            event.venueId,
-            event.id
+            newEvent.name,
+            newEvent.description,
+            newEvent.venueId,
+            newEvent.status,
+            newEvent.id
         ])
 
         // Verificando se teve alterações
@@ -132,7 +150,7 @@ const updateEvent = async (event) => {
             throw new NotFoundError('Evento não encontrado')
         }
 
-        const eventId = event.id
+        const eventId = newEvent.id
         const sqlSelect = 'SELECT * FROM events WHERE id = ?'
         const [rows] = await connection.execute(sqlSelect,[eventId])
 
@@ -140,14 +158,15 @@ const updateEvent = async (event) => {
             throw new NotFoundError('Erro ao retornar o evento cadastrado')
         }
 
-        return new Event(
+        const event = new Event(
             rows[0].id,
             rows[0].name,
             rows[0].description,
             rows[0].venue_id,
             rows[0].created_at
-        ) // Retorna o evento criado
+        )
 
+        return { event }
 
     } catch (error) {
         console.log(error)

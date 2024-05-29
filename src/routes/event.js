@@ -2,10 +2,12 @@ const express = require('express')
 const router = express.Router()
 
 const eventService = require('../services/eventService')
+
 const handleErrorService = require('../utils/handleErrorService')
 const Event = require('../models/Event')
 const tokenVerify = require('../utils/tokenVerify')
 
+// Consultar todos os Eventos ativos
 router.get('/', tokenVerify, async (req, res) => {
     try {
         const data = await eventService.getAllEvents()
@@ -15,17 +17,20 @@ router.get('/', tokenVerify, async (req, res) => {
     }
 })
 
+// Consulta um unico evento
 router.get('/:id', tokenVerify, async (req, res) => {
     const id = req.params.id
 
     try {
         const data = await eventService.getEvent(id)
+
         res.json({ message: "Consulta concluída", data })
     } catch (error) {
         handleErrorService(error, res)
     }
 })
 
+// Cadastra um Evento
 router.post('/', tokenVerify, async (req, res) => {
     const event = new Event(
         null,
@@ -43,13 +48,16 @@ router.post('/', tokenVerify, async (req, res) => {
     }
 })
 
+
+// Altera um Evento
 router.put('/', tokenVerify, async (req, res) => {
     const event = new Event(
         req.body.id,
         req.body.name,
         req.body.description,
         req.body.venueId,
-        null,
+        req.body.status,
+        req.body.createdAt
     )
 
     try {
@@ -60,6 +68,7 @@ router.put('/', tokenVerify, async (req, res) => {
     }
 })
 
+// Deleta um Evento
 router.delete('/:id', tokenVerify, async (req, res) => {
     const id = req.params.id
 

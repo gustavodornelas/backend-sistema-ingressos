@@ -46,7 +46,7 @@ const getAllCustomers = async () => {
             throw new NotFoundError('Nenhum cliente encontrado')
         }
 
-        return rows.map(row => new Customer(
+        const customers = rows.map(row => new Customer(
             row.id,
             row.name,
             row.email,
@@ -58,6 +58,8 @@ const getAllCustomers = async () => {
             row.asaas_id,
             row.created_at
         ))
+
+        return { customers }
     } catch (error) {
         console.log(error)
         if(error instanceof NotFoundError) {
@@ -88,7 +90,7 @@ const getCustomer = async (customerId) => {
         }
 
         const row = (rows[0])
-        return new Customer(
+        const customer = new Customer(
             row.id,
             row.name,
             row.email,
@@ -100,6 +102,8 @@ const getCustomer = async (customerId) => {
             row.asaas_id,
             row.created_at
         )
+
+        return { customer }
     } catch (error) {
         console.log(error)
         if (error instanceof NotFoundError) {
@@ -114,52 +118,57 @@ const getCustomer = async (customerId) => {
 }
 
 // Cadastrar cliente
-const createNewCustomer = async (customer) => {
+const createNewCustomer = async (newCustomer) => {
 
     let connection = null
 
     try {
         connection = await dbPool.getConnection()
 
-        const existingCustomer = await checkExistingCustomer(customer)
+        const existingCustomer = await checkExistingCustomer(newCustomer)
         if (existingCustomer) {
             throw new DuplicateError("Já existe um cliente com este CPF ou CNPJ cadastrado")
         }
 
         // Hash da senha antes de armazenar no banco de dados
-        const hashPassword = await bcrypt.hash(customer.password, 10)
+        const hashPassword = await bcrypt.hash(newCustomer.password, 10)
         const sqlInsert = 'INSERT INTO customers (name, email, phone, mobile_phone, cpf_cnpj, person_type, password, asaas_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        const [insertResult] = await connection.execute(sqlInsert, [customer.name, 
-                                 customer.email,
-                                 customer.phone,
-                                 customer.mobilePhone,
-                                 customer.cpfCnpj,
-                                 customer.personType,
-                                 hashPassword,
-                                 customer.asaasId
-                                ])
+        const [insertResult] = await connection.execute(sqlInsert, [
+            newCustomer.name, 
+            newCustomer.email,
+            newCustomer.phone,
+            newCustomer.mobilePhone,
+            newCustomer.cpfCnpj,
+            newCustomer.personType,
+            hashPassword,
+            newCustomer.asaasId
+        ])
         
         // Recupera o usuário criado no banco de dados
         const newCustomerId = insertResult.insertId
         const sqlSelect = 'SELECT * FROM customers WHERE id = ?'
         const [rows] = await connection.execute(sqlSelect, [newCustomerId])
 
-        if (rows.length > 0) {
-            return new Customer(
-                rows[0].id,
-                rows[0].name,
-                rows[0].email,
-                rows[0].phone,
-                rows[0].mobile_phone,
-                rows[0].cpf_cnpj,
-                rows[0].person_type,
-                undefined,
-                rows[0].asaas_id,
-                rows[0].created_at
-            )  // Retorna o pagamento criado
-        } else {
+        if (rows.length === 0) {
             throw new Error('Erro ao recuperar o usuário criado')
-        }
+        } 
+
+        const row = rows[0]
+        const customer = new Customer(
+            row.id,
+            row.name,
+            row.email,
+            row.phone,
+            row.mobile_phone,
+            row.cpf_cnpj,
+            row.person_type,
+            undefined,
+            row.asaas_id,
+            row.created_at
+        )
+
+        return { customer }
+
     } catch (error) {
         console.log(error)
         if (error instanceof DuplicateError) {
@@ -174,7 +183,7 @@ const createNewCustomer = async (customer) => {
 }
 
 // Atualizar cliente
-const updateCustomer = async (customer) => {
+const updateCustomer = async (newCustomer) => {
 
     let connection = null
 
@@ -182,14 +191,15 @@ const updateCustomer = async (customer) => {
         connection = await dbPool.getConnection()
 
         const updateSql = 'UPDATE customers SET name = ?, email = ?, phone = ?, mobile_phone = ?, cpf_cnpj = ?, person_type = ? WHERE id = ?'
-        const [ ResultSetHeader ] = await connection.execute(updateSql, [customer.name,
-                                                                   customer.email,
-                                                                   customer.phone,
-                                                                   customer.mobilePhone,
-                                                                   customer.cpfCnpj,
-                                                                   customer.personType,
-                                                                   customer.id
-                                                                ])
+        const [ ResultSetHeader ] = await connection.execute(updateSql, [
+            newCustomer.name,
+            newCustomer.email,
+            newCustomer.phone,
+            newCustomer.mobilePhone,
+            newCustomer.cpfCnpj,
+            newCustomer.personType,
+            newCustomer.id
+        ])
 
         if (ResultSetHeader.changedRows === 0) {
             if (ResultSetHeader.affectedRows === 1) {
@@ -200,25 +210,27 @@ const updateCustomer = async (customer) => {
 
         // Recupera o usuário atualizado no banco de dados
         const sqlSelect = 'SELECT * FROM customers WHERE id = ?'
-        const [rows] = await connection.execute(sqlSelect, [customer.id])
+        const [rows] = await connection.execute(sqlSelect, [newCustomer.id])
 
-        if (rows.length > 0) {
-            return new Customer(
-                rows[0].id,
-                rows[0].name,
-                rows[0].email,
-                rows[0].phone,
-                rows[0].mobile_phone,
-                rows[0].cpf_cnpj,
-                rows[0].person_type,
-                undefined,
-                rows[0].asaas_id,
-                rows[0].created_at
-            )  // Retorna o usuário atualizado
-        } else {
+        if (rows.length === 0) {
             throw new Error('Erro ao recuperar o usuário atualizado')
-        }
+        } 
+        
+        const row = rows[0]
+        const customer = new Customer(
+            row.id,
+            row.name,
+            row.email,
+            row.phone,
+            row.mobile_phone,
+            row.cpf_cnpj,
+            row.person_type,
+            undefined,
+            row.asaas_id,
+            row.created_at
+        )
 
+        return { customer }
 
     } catch (error) {
         console.log(error)
@@ -252,7 +264,7 @@ const changePassword = async (customer, newPassword) => {
 
         // Os dados estão no primeiro elemento do array rows
         const row = (rows[0])
-
+        console.log(customer)
         // Verificar se o cliente digitou a senha antiga correta
         const passwordVerify = await bcrypt.compare(customer.password, row.password)
         if (!passwordVerify) {

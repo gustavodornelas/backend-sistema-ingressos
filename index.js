@@ -8,6 +8,10 @@ const eventsRouter = require('./src/routes/event')
 const paymentRouter = require('./src/routes/payment')
 const ticketsRouter = require('./src/routes/tickets')
 const eventDateRouter = require('./src/routes/eventDate')
+const ticketBatchRouter = require('./src/routes/ticketBatches')
+const transactionRouter = require('./src/routes/transactions')
+const cartRouter = require('./src/routes/carts')
+const mediaRouter = require('./src/routes/media')
 
 const app = express()
 const PORT = 3000
@@ -26,6 +30,10 @@ app.use('/events', eventsRouter)
 app.use('/payments', paymentRouter)
 app.use('/tickets', ticketsRouter)
 app.use('/eventsDates', eventDateRouter)
+app.use('/ticketBatches', ticketBatchRouter)
+app.use('/transactions', transactionRouter)
+app.use('/carts', cartRouter)
+app.use('/media', mediaRouter)
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`)

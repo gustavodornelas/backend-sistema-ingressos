@@ -4,26 +4,31 @@ const NotFoundError = require('../CustomErrors/NotFoundError');
 const dbPool = require('../config/dbPool');
 const EventDate = require('../models/EventDate');
 
-const getAllEventDates = async () => {
+// Consultar todas as Datas de um evento ativas
+const getAllEventDates = async (eventId) => {
     let connection = null;
 
     try {
         connection = await dbPool.getConnection();
 
-        const sql = 'SELECT * FROM events_dates';
-        const [rows] = await connection.execute(sql);
-
+        const sql = 'SELECT * FROM events_dates WHERE event_id = ? and status = ?';
+        const [rows] = await connection.execute(sql, [ eventId, "ACTIVE" ]);
+        console.log(rows)
         if (rows.length === 0) {
             throw new NotFoundError('Nenhuma data de evento encontrada');
         }
 
-        return rows.map(row => new EventDate(
+
+        const eventDates =  rows.map(row => new EventDate(
             row.id,
             row.event_id,
             row.start_time,
             row.end_time,
+            row.status,
             row.created_at
-        ));
+        ))
+
+        return { eventDates }
     } catch (error) {
         console.log(error);
         if (error instanceof NotFoundError) {
@@ -37,6 +42,8 @@ const getAllEventDates = async () => {
     }
 };
 
+
+// Consultar uma unica data de evento
 const getEventDate = async (id) => {
     let connection = null;
 
@@ -51,13 +58,16 @@ const getEventDate = async (id) => {
         }
 
         const row = rows[0];
-        return new EventDate(
+        const eventDate = new EventDate(
             row.id,
             row.event_id,
             row.start_time,
             row.end_time,
+            row.status,
             row.created_at
-        );
+        )
+
+        return { eventDate }
     } catch (error) {
         console.log(error);
         if (error instanceof NotFoundError) {
@@ -71,17 +81,19 @@ const getEventDate = async (id) => {
     }
 };
 
-const createNewEventDate = async (eventDate) => {
+// Cadastrar um novo evento
+const createNewEventDate = async (NewEventDate) => {
     let connection = null;
 
     try {
         connection = await dbPool.getConnection();
 
-        const sqlInsert = 'INSERT INTO events_dates (event_id, start_time, end_time) VALUES (?, ?, ?)';
+        const sqlInsert = 'INSERT INTO events_dates (event_id, start_time, status, end_time) VALUES (?, ?, ?, ?)';
         const [insertResult] = await connection.execute(sqlInsert, [
-            eventDate.eventId,
-            eventDate.startTime,
-            eventDate.endTime
+            NewEventDate.eventId,
+            NewEventDate.startTime,
+            NewEventDate.status ? NewEventDate.status : "ACTIVE",
+            NewEventDate.endTime
         ]);
 
         const eventDateId = insertResult.insertId;
@@ -92,13 +104,18 @@ const createNewEventDate = async (eventDate) => {
             throw new NotFoundError('Erro ao retornar a data de evento cadastrada');
         }
 
-        return new EventDate(
-            rows[0].id,
-            rows[0].event_id,
-            rows[0].start_time,
-            rows[0].end_time,
-            rows[0].created_at
-        );
+        const row = rows[0]
+        const eventDate = new EventDate(
+            row.id,
+            row.event_id,
+            row.start_time,
+            row.end_time,
+            row.status,
+            row.created_at
+        )
+
+        return { eventDate }
+        
     } catch (error) {
         console.log(error);
         throw new Error('Erro ao cadastrar data de evento');
@@ -109,18 +126,20 @@ const createNewEventDate = async (eventDate) => {
     }
 };
 
-const updateEventDate = async (eventDate) => {
+// Atualizar um evento
+const updateEventDate = async (newEventDate) => {
     let connection = null;
 
     try {
         connection = await dbPool.getConnection();
 
-        const sql = 'UPDATE events_dates SET event_id = ?, start_time = ?, end_time = ? WHERE id = ?';
+        const sql = 'UPDATE events_dates SET event_id = ?, start_time = ?, end_time = ?, status = ? WHERE id = ?';
         const [resultSetHeader] = await connection.execute(sql, [
-            eventDate.eventId,
-            eventDate.startTime,
-            eventDate.endTime,
-            eventDate.id
+            newEventDate.eventId,
+            newEventDate.startTime,
+            newEventDate.endTime,
+            newEventDate.status,
+            newEventDate.id
         ]);
 
         if (resultSetHeader.changedRows === 0) {
@@ -130,7 +149,7 @@ const updateEventDate = async (eventDate) => {
             throw new NotFoundError('Data de evento não encontrada');
         }
 
-        const eventDateId = eventDate.id;
+        const eventDateId = newEventDate.id;
         const sqlSelect = 'SELECT * FROM events_dates WHERE id = ?';
         const [rows] = await connection.execute(sqlSelect, [eventDateId]);
 
@@ -138,13 +157,17 @@ const updateEventDate = async (eventDate) => {
             throw new NotFoundError('Erro ao retornar a data de evento atualizada');
         }
 
-        return new EventDate(
-            rows[0].id,
-            rows[0].event_id,
-            rows[0].start_time,
-            rows[0].end_time,
-            rows[0].created_at
-        );
+        const row = rows[0]
+        const eventDate = new EventDate(
+            row.id,
+            row.event_id,
+            row.start_time,
+            row.end_time,
+            row.status,
+            row.created_at
+        )
+
+        return { eventDate }
     } catch (error) {
         console.log(error);
         if (error instanceof NotFoundError || error instanceof NoContentError) {
@@ -158,6 +181,7 @@ const updateEventDate = async (eventDate) => {
     }
 };
 
+// Deletar uma data de evento
 const deleteEventDate = async (id) => {
     let connection = null;
 

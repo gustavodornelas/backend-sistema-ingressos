@@ -42,7 +42,7 @@ const getAllCustomersAddress = async () => {
             throw new NotFoundError('Nenhum endereço encontrado');
         }
 
-        return rows.map(row => new CustomerAddress(
+        const customersAddress = rows.map(row => new CustomerAddress(
             row.id,
             row.customer_id,
             row.name,
@@ -56,6 +56,8 @@ const getAllCustomersAddress = async () => {
             row.default_address,
             row.created_at
         ))
+
+        return { customersAddress }
     } catch (error) {
         console.log(error)
         if (error instanceof NotFoundError) {
@@ -84,7 +86,7 @@ const getAllAddressToCustomer = async (customerId) => {
             throw new NotFoundError('Nenhum endereço encontrado');
         }
 
-        return rows.map(row => new CustomerAddress(
+        const customersAddress = rows.map(row => new CustomerAddress(
             row.id,
             row.customer_id,
             row.name,
@@ -98,6 +100,8 @@ const getAllAddressToCustomer = async (customerId) => {
             row.default_address,
             row.created_at
         ))
+
+        return { customersAddress }
     } catch (error) {
         console.log(error)
         if (error instanceof NotFoundError) {
@@ -126,7 +130,7 @@ const getDefaultCustomerAddress = async (customerId) => {
             throw new NotFoundError('Nenhum endereço encontrado');
         }
 
-        return new CustomerAddress(
+        const customersAddress = new CustomerAddress(
             rows[0].id,
             rows[0].customer_id,
             rows[0].name,
@@ -140,6 +144,8 @@ const getDefaultCustomerAddress = async (customerId) => {
             rows[0].default_address,
             rows[0].created_at
         )
+
+        return { customersAddress }
     } catch (error) {
         console.log(error)
         if (error instanceof NoContentError) {
@@ -207,7 +213,7 @@ const createNewCustomerAddress = async (customerAddress) => {
 
         await connection.commit()
 
-        return new CustomerAddress(
+        const customersAddress = new CustomerAddress(
             rows2[0].id,
             rows2[0].customer_id,
             rows2[0].name,
@@ -220,7 +226,9 @@ const createNewCustomerAddress = async (customerAddress) => {
             rows2[0].postal_code,
             rows2[0].default_address,
             rows2[0].created_at
-        )  // Retorna o endereço criado
+        )
+
+        return { customersAddress }
 
     } catch (error) {
         console.log(error)
@@ -283,7 +291,7 @@ const updateCustomerAddress = async (customerAddress) => {
 
         await connection.commit()
 
-        return new CustomerAddress(
+        const customersAddress = new CustomerAddress(
             rows2[0].id,
             rows2[0].customer_id,
             rows2[0].name,
@@ -296,7 +304,9 @@ const updateCustomerAddress = async (customerAddress) => {
             rows2[0].postal_code,
             rows2[0].default_address,
             rows2[0].created_at
-        )  // Retorna o endereço criado
+        )
+
+        return { customersAddress }
 
     } catch (error) {
         console.log(error)

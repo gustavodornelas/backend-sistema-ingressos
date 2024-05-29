@@ -17,7 +17,7 @@ const getAllVenues = async () => {
             throw new NotFoundError('Nenhum local foi encontrado')
         }
 
-        return rows.map(row => new Venue(
+        const venues =  rows.map(row => new Venue(
             row.id,
             row.name,
             row.address,
@@ -30,6 +30,8 @@ const getAllVenues = async () => {
             row.capacity,
             row.created_at,
         ))
+
+        return { venues }
     } catch (error) {
         console.log(error)
         if (error instanceof NotFoundError) {
@@ -58,7 +60,7 @@ const getVenue = async (id) => {
         }
 
         const row = rows[0]
-        return new Venue(
+        const venue = new Venue(
             row.id,
             row.name,
             row.address,
@@ -71,6 +73,8 @@ const getVenue = async (id) => {
             row.capacity,
             row.created_at,
         )
+
+        return { venue }
     } catch (error) {
         console.log(error)
         if (error instanceof NotFoundError) {
@@ -84,23 +88,22 @@ const getVenue = async (id) => {
     }
 }
 
-const createNewVenue = async (venue) => {
+const createNewVenue = async (newVenue) => {
     let connection = null
-    console.log(venue)
     try {
         connection = await dbPool.getConnection()
 
         const sqlInsert = 'INSERT INTO venues (name, address, address_number, complement, province, city, state, postal_code, capacity) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )'
         const [insertResult] = await connection.execute(sqlInsert, [
-            venue.name,
-            venue.address,
-            venue.addressNumber,
-            venue.complement,
-            venue.province,
-            venue.city,
-            venue.state,
-            venue.postalCode,
-            venue.capacity,
+            newVenue.name,
+            newVenue.address,
+            newVenue.addressNumber,
+            newVenue.complement,
+            newVenue.province,
+            newVenue.city,
+            newVenue.state,
+            newVenue.postalCode,
+            newVenue.capacity,
         ])
 
         const venueId = insertResult.insertId
@@ -112,19 +115,22 @@ const createNewVenue = async (venue) => {
             throw new NotFoundError('Erro ao recuperar o local cadastrado')
         }
 
-        return new Venue(
-            rows[0].id,
-            rows[0].name,
-            rows[0].address,
-            rows[0].address_number,
-            rows[0].complement,
-            rows[0].province,
-            rows[0].city,
-            rows[0].state,
-            rows[0].postal_code,
-            rows[0].capacity,
-            rows[0].created_at
+        const row = rows[0]
+        const venue = new Venue(
+            row.id,
+            row.name,
+            row.address,
+            row.address_number,
+            row.complement,
+            row.province,
+            row.city,
+            row.state,
+            row.zip_code,
+            row.capacity,
+            row.created_at,
         )
+
+        return { venue }
 
     } catch (error) {
         console.log(error)
@@ -139,7 +145,7 @@ const createNewVenue = async (venue) => {
     }
 }
 
-const updateVenue = async (venue) => {
+const updateVenue = async (newVenue) => {
     let connection = null
 
     try {
@@ -147,16 +153,16 @@ const updateVenue = async (venue) => {
 
         const sqlUpdate = 'UPDATE venues SET name = ?, address = ?, address_number = ?, complement = ?, province = ?, city = ?, state = ?, postal_code = ?, capacity = ? WHERE id = ?'
         const [ResultSetHeader] = await connection.execute(sqlUpdate, [
-            venue.name,
-            venue.address,
-            venue.addressNumber,
-            venue.complement,
-            venue.province,
-            venue.city,
-            venue.state,
-            venue.postalCode,
-            venue.capacity,
-            venue.id
+            newVenue.name,
+            newVenue.address,
+            newVenue.addressNumber,
+            newVenue.complement,
+            newVenue.province,
+            newVenue.city,
+            newVenue.state,
+            newVenue.postalCode,
+            newVenue.capacity,
+            newVenue.id
         ])
 
         // Verificando se teve alterações
@@ -167,7 +173,7 @@ const updateVenue = async (venue) => {
             throw new NotFoundError('Local não encontrado')
         }
 
-        const venueId = venue.id
+        const venueId = newVenue.id
         const sqlSelect = 'SELECT * FROM venues WHERE id = ?'
         const [rows] = await connection.execute(sqlSelect, [venueId])
 
@@ -176,19 +182,22 @@ const updateVenue = async (venue) => {
             throw new NotFoundError('Erro ao retornar o local atualizado')
         }
 
-        return new Venue(
-            rows[0].id,
-            rows[0].name,
-            rows[0].address,
-            rows[0].address_number,
-            rows[0].complement,
-            rows[0].province,
-            rows[0].city,
-            rows[0].state,
-            rows[0].postal_code,
-            rows[0].capacity,
-            rows[0].created_at
-        ) // Retornando o local cadastrado
+        const row = rows[0]
+        const venue = new Venue(
+            row.id,
+            row.name,
+            row.address,
+            row.address_number,
+            row.complement,
+            row.province,
+            row.city,
+            row.state,
+            row.zip_code,
+            row.capacity,
+            row.created_at,
+        )
+
+        return { venue }
 
     } catch (error) {
         console.log(error)
@@ -212,8 +221,9 @@ const deleteVenue = async (id) => {
         const sql = 'DELETE FROM venues WHERE id = ?'
         const [ResultSetHeader] = await connection.execute(sql, [id])
 
+        console.error(ResultSetHeader)
+
         if (ResultSetHeader.affectedRows === 0) {
-            // Reverter a transação se o cliente não for encontrado
             throw new NotFoundError('Local não encontrado')
         } 
 

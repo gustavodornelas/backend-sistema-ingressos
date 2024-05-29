@@ -6,33 +6,38 @@ const handleErrorService = require('../utils/handleErrorService');
 const EventDate = require('../models/EventDate');
 const tokenVerify = require('../utils/tokenVerify');
 
-router.get('/', tokenVerify, async (req, res) => {
+// Consultar todas as Datas de um Evento
+router.get('/event/:eventId', tokenVerify, async (req, res) => {
+    
+    const eventId = req.params.eventId
     try {
-        const data = await eventDateService.getAllEventDates();
+        const data = await eventDateService.getAllEventDates( eventId );
         res.json({ message: "Consulta concluída", data });
     } catch (error) {
         handleErrorService(error, res);
     }
 });
 
+// Consultar uma unica data de Evento
 router.get('/:id', tokenVerify, async (req, res) => {
-    const id = req.params.id;
+    const id = req.params.id
 
     try {
-        const data = await eventDateService.getEventDate(id);
-        res.json({ message: "Consulta concluída", data });
+        const data = await eventDateService.getEventDate(id)
+        res.json({ message: "Consulta concluída", data })
     } catch (error) {
-        handleErrorService(error, res);
+        handleErrorService(error, res)
     }
 });
 
+// Cadastrar uma data de evento
 router.post('/', tokenVerify, async (req, res) => {
     const eventDate = new EventDate(
         null,
         req.body.eventId,
         req.body.startTime,
         req.body.endTime,
-        null
+        req.body.status
     );
 
     try {
@@ -43,13 +48,14 @@ router.post('/', tokenVerify, async (req, res) => {
     }
 });
 
+// Atualizar uma data de evento
 router.put('/', tokenVerify, async (req, res) => {
     const eventDate = new EventDate(
         req.body.id,
         req.body.eventId,
         req.body.startTime,
         req.body.endTime,
-        null
+        req.body.status
     );
 
     try {
@@ -60,6 +66,7 @@ router.put('/', tokenVerify, async (req, res) => {
     }
 });
 
+// Deletar uma data de evento
 router.delete('/:id', tokenVerify, async (req, res) => {
     const id = req.params.id;
 

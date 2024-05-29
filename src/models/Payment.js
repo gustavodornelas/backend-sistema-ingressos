@@ -9,8 +9,8 @@ class Payment {
         this.transactionDate = transactionDate
         this.dueDate = dueDate
         this.description = description
-        this.status = status = invoiceUrl
-        this.invoiceUrl
+        this.status = status
+        this.invoiceUrl = invoiceUrl
         this.createdAt = createdAt
     }
 

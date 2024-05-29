@@ -116,6 +116,8 @@ router.put('/changePassword', tokenVerify, async (req, res) => {
             req.body.customer.id,
             req.body.customer.name,
             req.body.customer.email,
+            req.body.phone,
+            req.body.mobilePhone,
             req.body.customer.cpfCnpj,
             req.body.customer.personType,
             req.body.customer.password,

@@ -34,7 +34,6 @@ router.post('/', tokenVerify, async (req, res) => {
         const payment = new Payment(
             null,
             req.body.customerId,
-            req.body.asaasCustomerId,
             req.body.eventId,
             null,
             req.body.value,
@@ -42,8 +41,6 @@ router.post('/', tokenVerify, async (req, res) => {
             null,
             req.body.dueDate,
             req.body.description,
-            null,
-            null,
         )
 
         // Criando pagamento no Asaas e complentando dados de Transação
@@ -58,13 +55,13 @@ router.post('/', tokenVerify, async (req, res) => {
     }
 })
 
-router.post('/:id/refund', tokenVerify, async (req, res) => {
+router.post('/refund/:id', tokenVerify, async (req, res) => {
 
     try {
 
         // Recuperando pagamento
         const id = req.params.id
-        const payment = await paymentService.getPayment(id)
+        const { payment } = await paymentService.getPayment(id)
 
         // Gerando estorno no Asaas
         const response = await asaasService.refundPayment(payment)

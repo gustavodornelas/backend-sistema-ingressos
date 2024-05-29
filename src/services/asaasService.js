@@ -83,7 +83,6 @@ const createPayment = async (paymentData) => {
             description: paymentData.description
         }
 
-
         const res = await apiClient.post('/payments', data)
         return res.data
     } catch (error) {
@@ -102,17 +101,20 @@ const createPayment = async (paymentData) => {
 
 const refundPayment = async (payment) => {
 
+    const {value, asaasId} = payment
+
     try {
-        const id = payment.asaasId
 
         const data = {
-            value: payment.value,
+            value: value,
         }
 
-        const res = await apiClient.post('/payments/' + id + '/refund', data)
+        const url = '/payments/' + asaasId + '/refund'
+
+        const res = await apiClient.post(url, data)
         return res.data.refunds[0]
     } catch (error) {
-        console.log(error)
+        console.log(error.response.data.errors[0])
         throw new AsaasError(error)
     }
 

@@ -30,16 +30,16 @@ router.get('/:id', tokenVerify, async (req, res) => {
 router.post('/', tokenVerify, async (req, res) => {
     const ticket = new Ticket(
         null,
+        req.body.batchId,
         req.body.eventId,
         req.body.eventDateId,
         req.body.customerId,
         req.body.paymentId,
         req.body.purchaseDate,
-        req.body.price,
+        req.body.price
     );
 
     try {
-        console.log(ticket)
         const data = await ticketService.createNewTicket(ticket);
         res.json({ message: "Ingresso cadastrado com sucesso", data });
     } catch (error) {
@@ -50,6 +50,7 @@ router.post('/', tokenVerify, async (req, res) => {
 router.put('/', tokenVerify, async (req, res) => {
     const ticket = new Ticket(
         req.body.id,
+        req.body.batchId,
         req.body.eventId,
         req.body.eventDateId,
         req.body.customerId,
@@ -57,6 +58,7 @@ router.put('/', tokenVerify, async (req, res) => {
         req.body.purchaseDate,
         req.body.price,
         req.body.qrCode,
+        req.body.status,
         req.body.createdAt
     );
 

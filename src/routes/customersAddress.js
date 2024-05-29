@@ -22,7 +22,7 @@ router.get('/', tokenVerify, async (req, res) => {
 })
 
 // Buscar todos os endereços de um usuário
-router.get('/:id', tokenVerify, async (req, res) => {
+router.get('/customer/:id', tokenVerify, async (req, res) => {
 
     const customerId = req.params.id
 
@@ -35,7 +35,7 @@ router.get('/:id', tokenVerify, async (req, res) => {
 })
 
 // buscar o endereço padrão do usuário
-router.get('/default/:id', tokenVerify, async (req, res) => {
+router.get('/customer/:id/default', tokenVerify, async (req, res) => {
 
     const customerId = req.params.id
 
