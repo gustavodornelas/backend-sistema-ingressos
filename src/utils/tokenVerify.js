@@ -14,7 +14,6 @@ const tokenVerify = async (req, res, next) => {
         // Verificar se o token está presente no banco de dados
         const sql = 'SELECT * FROM tokens WHERE token = ?'
         const [ rows ] = await connection.execute(sql, [token])
-
         if ( rows.length === 0 ) {
             throw new UnauthorizedError('Token não encontrado no banco de dados')
         }

@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt')
+const { v4: uuidv4 } = require('uuid');
 
 const Customer = require('../models/Customer')
 const dbPool = require('../config/dbPool')
@@ -132,8 +133,11 @@ const createNewCustomer = async (newCustomer) => {
 
         // Hash da senha antes de armazenar no banco de dados
         const hashPassword = await bcrypt.hash(newCustomer.password, 10)
-        const sqlInsert = 'INSERT INTO customers (name, email, phone, mobile_phone, cpf_cnpj, person_type, password, asaas_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        const [insertResult] = await connection.execute(sqlInsert, [
+        
+        newCustomer.id = "cus_" + uuidv4()
+        const sqlInsert = 'INSERT INTO customers (id, name, email, phone, mobile_phone, cpf_cnpj, person_type, password, asaas_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        await connection.execute(sqlInsert, [
+            newCustomer.id,
             newCustomer.name, 
             newCustomer.email,
             newCustomer.phone,
@@ -145,9 +149,8 @@ const createNewCustomer = async (newCustomer) => {
         ])
         
         // Recupera o usuário criado no banco de dados
-        const newCustomerId = insertResult.insertId
         const sqlSelect = 'SELECT * FROM customers WHERE id = ?'
-        const [rows] = await connection.execute(sqlSelect, [newCustomerId])
+        const [rows] = await connection.execute(sqlSelect, [newCustomer.id])
 
         if (rows.length === 0) {
             throw new Error('Erro ao recuperar o usuário criado')

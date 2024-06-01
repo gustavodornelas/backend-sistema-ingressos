@@ -22,13 +22,16 @@ const createNewOrder = async (data) => {
         connection = await dbPool.getConnection()
         connection.beginTransaction()
 
-
-        // Consultando carrinho de compras
-        const sqlSelectCart = 'SELECT * FROM cart WHERE customer_id = ?'
-        const [cartRows] = await connection.execute(sqlSelectCart, [data.customerId])
+        // Consultando carrinho de compras filtrando pelo event_id
+        const sqlSelectCart = `
+            SELECT cart.* 
+            FROM cart 
+            JOIN ticket_batches ON cart.ticket_batch_id = ticket_batches.id 
+            WHERE cart.customer_id = ? AND ticket_batches.event_id = ?`
+        const [cartRows] = await connection.execute(sqlSelectCart, [data.customerId, data.eventId])
 
         if (cartRows.length === 0) {
-            throw new NotFoundError('Nenhum item encontrado no carrinho')
+            throw new NotFoundError('Nenhum item encontrado no carrinho para o evento especificado')
         }
 
         const cartItems = cartRows.map(row => new CartItem(
@@ -50,13 +53,20 @@ const createNewOrder = async (data) => {
             const { ticketBatchId, quantity } = item
 
             // Reservar Tickets Solicitados
-            const sqlSelect = "SELECT ticket_batches.price as price, ticket_batches.description as description, ticket_batches.available_quantity as available_quantity, ticket_batches.reserved_quantity as reserved_quantity, events.name AS event_name " +
-                "FROM ticket_batches JOIN events ON ticket_batches.event_id = events.id " +
-                "WHERE ticket_batches.id = ?"
+            const sqlSelect = `
+                SELECT ticket_batches.price as price, 
+                       ticket_batches.description as description, 
+                       ticket_batches.available_quantity as available_quantity, 
+                       ticket_batches.reserved_quantity as reserved_quantity, 
+                       ticket_batches.event_id as event_id, 
+                       events.name AS event_name 
+                FROM ticket_batches 
+                JOIN events ON ticket_batches.event_id = events.id 
+                WHERE ticket_batches.id = ?`
 
             const [selectResult] = await connection.execute(sqlSelect, [ticketBatchId]);
 
-            if (selectResult === 0) {
+            if (selectResult.length === 0) {
                 throw new NotFoundError("Erro ao encontrar lote de ingressos")
             }
 
@@ -65,7 +75,7 @@ const createNewOrder = async (data) => {
             const eventName = selectResult[0].event_name
 
             if (availableQuantity - reservedQuantity < quantity) {
-                throw new Error(selectResult[0].description +  ": Quantidade solicitada menor que a quantidade disponivel")
+                throw new Error(selectResult[0].description + ": Quantidade solicitada maior que a quantidade disponível")
             }
 
             const sqlUpdate = "UPDATE ticket_batches SET reserved_quantity = ? WHERE id = ?"
@@ -85,17 +95,15 @@ const createNewOrder = async (data) => {
             totalPrice += parseFloat(selectResult[0].price) * parseInt(quantity)
 
             if (count++ > 1) {
-                description+= " | "
+                description += " | "
             }
 
             description += eventName + " " + quantity + " " + selectResult[0].description
-
-            
         }))
 
         // Criando pagamento
         const payment = new Payment(
-            null,
+            "pay_" + uuidv4(),
             data.customerId,
             data.eventId,
             null,
@@ -115,9 +123,10 @@ const createNewOrder = async (data) => {
         // Criando pagamento no Banco de Dados
         const sqlPaymentInsert = `
             INSERT INTO payments (
-                customer_id, event_id, asaas_id, value, billing_type, transaction_date, due_date, description, status, invoice_url
-            ) VALUES (?, ?, ?, ?, ?, now(), ?, ?, ?, ?)`
-        const [insertResult] = await connection.execute(sqlPaymentInsert, [
+                id, customer_id, event_id, asaas_id, value, billing_type, transaction_date, due_date, description, status, invoice_url
+            ) VALUES (?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?)`
+        await connection.execute(sqlPaymentInsert, [
+            payment.id,
             payment.customerId,
             payment.eventId,
             payment.asaasId,
@@ -130,9 +139,8 @@ const createNewOrder = async (data) => {
         ])
 
         // Recuperando o pagamento criado
-        const newPaymentId = insertResult.insertId
         const sqlSelect = 'SELECT * FROM payments WHERE id = ?'
-        const [paymentRows] = await connection.execute(sqlSelect, [newPaymentId])
+        const [paymentRows] = await connection.execute(sqlSelect, [payment.id])
         if (paymentRows.length === 0) {
             throw new Error('Erro ao recuperar o pagamento cadastrado')
         }
@@ -155,17 +163,16 @@ const createNewOrder = async (data) => {
         // Criando tickets no banco de dados
         await Promise.all(cartItems.map(async (item) => {
             const { ticketBatch } = await ticketBatchService.getTicketBatch(item.ticketBatchId)
-
             for (let index = 0; index < item.quantity; index++) {
 
                 const tickets = []
 
-                // Verificando se o ingresso e somente para 1 data
+                // Verificando se o ingresso é somente para 1 data
                 if (!ticketBatch.singleDateBatch) {
 
                     // Gerando ingresso individual
                     tickets.push(new Ticket(
-                        null,
+                        "tic_" + uuidv4(),
                         ticketBatch.id,
                         ticketBatch.eventId,
                         ticketBatch.eventDateId,
@@ -173,35 +180,34 @@ const createNewOrder = async (data) => {
                         newPayment.id,
                         null, // Data de pagamento só será atualizada quando a compra for confirmada
                         ticketBatch.price,
-                        uuidv4(),
                         "RESERVED"
                     ))
 
                 } else {
-                    // Gerando ingressos para Passaporte, sendo 1 ingresso para cada data disponivel
+                    // Gerando ingressos para Passaporte, sendo 1 ingresso para cada data disponível
                     const { ticketBatches } = await ticketBatchService.getAllEventTicketBatches(data.eventId)
-                    ticketBatches.map(eventbatch => {
-                        if (eventbatch.eventDateId) {
+                    ticketBatches.map(eventBatch => {
+                        if (eventBatch.eventDateId) {
                             tickets.push(new Ticket(
-                                null,
+                                "tic_" + uuidv4(),
                                 ticketBatch.id,
                                 ticketBatch.eventId,
-                                eventbatch.eventDateId,
+                                eventBatch.eventDateId,
                                 data.customerId,
                                 newPayment.id,
                                 null, // Data de pagamento só será atualizada quando a compra for confirmada
                                 ticketBatch.price,
-                                uuidv4(),
                                 "RESERVED"
                             ))
                         }
                     })
-
                 }
 
+                // Criando tickets no banco de dados
                 await Promise.all(tickets.map(async (ticket) => {
-                    const sqlInsert = 'INSERT INTO tickets (batch_id, event_id, eventDate_id, customer_id, payment_id, purchase_date, price, qr_code, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-                    const [insertResult] = await connection.execute(sqlInsert, [
+                    const sqlInsert = 'INSERT INTO tickets (id, batch_id, event_id, eventDate_id, customer_id, payment_id, purchase_date, price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                    await connection.execute(sqlInsert, [
+                        ticket.id,
                         ticket.batchId,
                         ticket.eventId,
                         ticket.eventDateId,
@@ -209,15 +215,19 @@ const createNewOrder = async (data) => {
                         ticket.paymentId,
                         ticket.purchaseDate,
                         ticket.price,
-                        ticket.qrCode,
                         ticket.status
                     ])
                 }))
             }
         }))
 
-        const cartDeleteSql = 'DELETE FROM cart WHERE customer_id = ?'
-        await connection.execute(cartDeleteSql, [data.customerId])
+        // Esvaziando carrinho de compras do cliente filtrando pelo event_id
+        const cartDeleteSql = `
+            DELETE cart 
+            FROM cart 
+            JOIN ticket_batches ON cart.ticket_batch_id = ticket_batches.id 
+            WHERE cart.customer_id = ? AND ticket_batches.event_id = ?`
+        await connection.execute(cartDeleteSql, [data.customerId, data.eventId])
 
         connection.commit()
 
@@ -229,13 +239,13 @@ const createNewOrder = async (data) => {
         if (error instanceof NotFoundError || NoContentError) {
             throw error
         }
-        throw new Error('Erro ao reservar ingresssos')
+        throw new Error('Erro ao reservar ingressos')
     } finally {
         if (connection) {
             connection.release()
         }
     }
-
 }
+
 
 module.exports = { createNewOrder }

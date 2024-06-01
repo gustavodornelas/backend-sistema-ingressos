@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const NoContentError = require('../CustomErrors/NoContentError')
 const NotFoundError = require('../CustomErrors/NotFoundError')
 const dbPool = require('../config/dbPool')
@@ -88,17 +90,19 @@ const createNewEvent = async (newEvent) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sqlInsert = 'INSERT INTO events (name, description, venue_id, status) VALUES (?, ?, ?, ?)'
-        const [insertResult] = await connection.execute(sqlInsert, [
+        newEvent.id = "eve_" + uuidv4()
+
+        const sqlInsert = 'INSERT INTO events (id, name, description, venue_id, status) VALUES (?, ?, ?, ?, ?)'
+        await connection.execute(sqlInsert, [
+            newEvent.id,
             newEvent.name,
             newEvent.description,
             newEvent.venueId,
             newEvent.status ? event.status : "ACTIVE"
         ])
 
-        const eventId = insertResult.insertId
         const sqlSelect = 'SELECT * FROM events WHERE id = ?'
-        const [rows] = await connection.execute(sqlSelect,[eventId])
+        const [rows] = await connection.execute(sqlSelect,[newEvent.id])
 
         if (rows.length === 0 ) {
             throw new NotFoundError('Erro ao retornar o evento cadastrado')

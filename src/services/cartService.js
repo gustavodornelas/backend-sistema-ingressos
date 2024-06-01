@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const NoContentError = require('../CustomErrors/NoContentError')
 const NotFoundError = require('../CustomErrors/NotFoundError')
 const dbPool = require('../config/dbPool')
@@ -106,10 +108,17 @@ const addItemToCart = async (customerId, ticketBatchId, quantity) => {
             cartItemId = rows1[0].id
         } else {
             // Caso contrário, adiciona um novo item ao carrinho
-            const sqlInsert = 'INSERT INTO cart (customer_id, ticket_batch_id, quantity) VALUES (?, ?, ?)'
-            const [insertResult] = await connection.execute(sqlInsert, [customerId, ticketBatchId, quantity])
+            const sqlInsert = 'INSERT INTO cart (id, customer_id, ticket_batch_id, quantity) VALUES (?, ?, ?, ?)'
+            
+            cartItemId =  "car_" + uuidv4()
+            
+            await connection.execute(sqlInsert, [
+                cartItemId,
+                customerId, 
+                ticketBatchId, 
+                quantity
+            ])
 
-            cartItemId = insertResult.insertId
         }
 
         // Busca o item adicionado ou alterado

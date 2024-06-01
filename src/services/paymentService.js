@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const NotFoundError = require('../CustomErrors/NotFoundError')
 const dbPool = require('../config/dbPool')
 const Payment = require('../models/Payment')
@@ -98,11 +100,15 @@ const createPayment = async (newPayment) => {
     let connection = null
     try {
         connection = await dbPool.getConnection()
+
+        newPayment.id = "pay_" + uuidv4()
+
         const sqlInsert = `
             INSERT INTO payments (
-                customer_id, event_id, asaas_id, value, billing_type, transaction_date, due_date, description, status, invoice_url
-            ) VALUES (?, ?, ?, ?, ?, now(), now() + INTERVAL 30 DAY, ?, ?, ?)`
-        const [insertResult] = await connection.execute(sqlInsert, [
+                id, customer_id, event_id, asaas_id, value, billing_type, transaction_date, due_date, description, status, invoice_url
+            ) VALUES (?, ?, ?, ?, ?, ?, now(), now() + INTERVAL 30 DAY, ?, ?, ?)`
+        await connection.execute(sqlInsert, [
+            newPayment.id,
             newPayment.customerId,
             newPayment.eventId,
             newPayment.asaasId,
@@ -114,9 +120,8 @@ const createPayment = async (newPayment) => {
         ])
 
         // Retrieve the newly created payment row using the last insert id
-        const newPaymentId = insertResult.insertId
         const sqlSelect = 'SELECT * FROM payments WHERE id = ?'
-        const [rows] = await connection.execute(sqlSelect, [newPaymentId])
+        const [rows] = await connection.execute(sqlSelect, [newPayment.id])
 
         if (rows.length === 0) {
             throw new NotFoundError('Erro ao recuperar o pagamento cadastrado')
@@ -159,19 +164,20 @@ const refundPayment = async (newRefund) => {
     try {
         connection = await dbPool.getConnection()
 
+        newRefund.id = "ref_" + uuidv4()
+
         // Inserindo estorno na tabela
-        const sqlInsert = 'INSERT INTO refunds (payment_id, status, value, refund_date) VALUES (?, ?, ?, ?)'
-        const [insertResult] = await connection.execute(sqlInsert, [
+        const sqlInsert = 'INSERT INTO refunds (id, payment_id, status, value, refund_date) VALUES (?, ?, ?, ?, ?)'
+        await connection.execute(sqlInsert, [
+            newRefund.id,
             newRefund.paymentId,
             newRefund.status,
             newRefund.value,
             newRefund.refundDate
         ])
 
-        const refundId = insertResult.insertId
-
         const sqlSelect = 'SELECT * FROM refunds WHERE id = ?'
-        const [rows] = await connection.execute(sqlSelect, [refundId])
+        const [rows] = await connection.execute(sqlSelect, [newRefund.id])
 
         // Verificando o estorno recuperado
         if (rows.length === 0) {

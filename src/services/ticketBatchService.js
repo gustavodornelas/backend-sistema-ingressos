@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const dbPool = require('../config/dbPool')
 const TicketBatch = require('../models/TicketBatch')
 const NoContentError = require('../CustomErrors/NoContentError')
@@ -130,8 +132,11 @@ const createNewTicketBatch = async (newTicketBatch) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sqlInsert = 'INSERT INTO ticket_batches (event_id, single_date_batch, event_date_id, description, quantity, available_quantity, price, batch_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        const [insertResult] = await connection.execute(sqlInsert, [
+        newTicketBatch.id = "bat_" + uuidv4()
+
+        const sqlInsert = 'INSERT INTO ticket_batches (id, event_id, single_date_batch, event_date_id, description, quantity, available_quantity, price, batch_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        await connection.execute(sqlInsert, [
+            newTicketBatch.id,
             newTicketBatch.eventId,
             newTicketBatch.singleDateBatch,
             newTicketBatch.eventDateId ? newTicketBatch.eventDateId : null,
@@ -143,9 +148,8 @@ const createNewTicketBatch = async (newTicketBatch) => {
             newTicketBatch.status ? newTicketBatch.status : "ACTIVE"
         ])
 
-        const ticketBatchId = insertResult.insertId
         const sqlSelect = 'SELECT * FROM ticket_batches WHERE id = ?'
-        const [rows] = await connection.execute(sqlSelect, [ticketBatchId])
+        const [rows] = await connection.execute(sqlSelect, [newTicketBatch.id])
 
         if (rows.length === 0) {
             throw new NotFoundError('Erro ao retornar o lote de ingressos cadastrado')

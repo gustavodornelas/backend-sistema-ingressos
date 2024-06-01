@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const media = require('../models/Media')
 const dbPool = require('../config/dbPool');
 const Media = require('../models/Media');
@@ -9,8 +11,11 @@ const saveMedia = async (newMedia) => {
     try {
         connection = await dbPool.getConnection();
 
-        const MediaInsert = 'INSERT INTO media (name_media, path_media, event_id, type) VALUES (?, ?, ?, ?)';
-        const [result] = await connection.execute(MediaInsert, [
+        newMedia.id = "med_" + uuidv4()
+
+        const MediaInsert = 'INSERT INTO media (id, name_media, path_media, event_id, type) VALUES (?, ?, ?, ?, ?)';
+        await connection.execute(MediaInsert, [
+            newMedia.id,
             newMedia.nameMedia,
             newMedia.pathMedia,
             newMedia.eventId,
@@ -18,7 +23,7 @@ const saveMedia = async (newMedia) => {
         ]);
 
         const mediaSelect = "SELECT * FROM media WHERE id = ?"
-        const [rows] = await connection.execute(mediaSelect, [result.insertId])
+        const [rows] = await connection.execute(mediaSelect, [newMedia.id])
 
 
         if (rows.lengh === 0) {

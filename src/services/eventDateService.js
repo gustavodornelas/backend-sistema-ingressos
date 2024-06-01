@@ -1,4 +1,6 @@
 // services/eventDateService.js
+const { v4: uuidv4 } = require('uuid');
+
 const NoContentError = require('../CustomErrors/NoContentError');
 const NotFoundError = require('../CustomErrors/NotFoundError');
 const dbPool = require('../config/dbPool');
@@ -82,23 +84,24 @@ const getEventDate = async (id) => {
 };
 
 // Cadastrar um novo evento
-const createNewEventDate = async (NewEventDate) => {
+const createNewEventDate = async (newEventDate) => {
     let connection = null;
 
     try {
         connection = await dbPool.getConnection();
 
-        const sqlInsert = 'INSERT INTO events_dates (event_id, start_time, status, end_time) VALUES (?, ?, ?, ?)';
-        const [insertResult] = await connection.execute(sqlInsert, [
-            NewEventDate.eventId,
-            NewEventDate.startTime,
-            NewEventDate.status ? NewEventDate.status : "ACTIVE",
-            NewEventDate.endTime
+        newEventDate.id = "dat_" + uuidv4()
+        const sqlInsert = 'INSERT INTO events_dates (id, event_id, start_time, status, end_time) VALUES (?, ?, ?, ?, ?)';
+        await connection.execute(sqlInsert, [
+            newEventDate.id,
+            newEventDate.eventId,
+            newEventDate.startTime,
+            newEventDate.status ? newEventDate.status : "ACTIVE",
+            newEventDate.endTime
         ]);
 
-        const eventDateId = insertResult.insertId;
         const sqlSelect = 'SELECT * FROM events_dates WHERE id = ?';
-        const [rows] = await connection.execute(sqlSelect, [eventDateId]);
+        const [rows] = await connection.execute(sqlSelect, [newEventDate.id]);
 
         if (rows.length === 0) {
             throw new NotFoundError('Erro ao retornar a data de evento cadastrada');

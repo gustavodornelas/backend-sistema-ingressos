@@ -26,7 +26,6 @@ const getAllTickets = async () => {
             row.payment_id,
             row.purchase_date,
             row.price,
-            row.qr_code,
             row.status,
             row.created_at
         ))
@@ -68,7 +67,6 @@ const getTicket = async (id) => {
             row.payment_id,
             row.purchase_date,
             row.price,
-            row.qr_code,
             row.status,
             row.created_at
         )
@@ -94,8 +92,6 @@ const createNewTicket = async (newTicket) => {
         connection = await dbPool.getConnection();
         connection.beginTransaction();
 
-        newTicket.qrCode = uuidv4();
-
         const sqlSelect1 = 'SELECT * FROM ticket_batches WHERE id = ?'
         const [rows1] = await connection.execute(sqlSelect1, [newTicket.batchId]);
 
@@ -112,9 +108,11 @@ const createNewTicket = async (newTicket) => {
             throw new NotFoundError('Erro ao atualizar lote de ingressos')
         }
 
+        newTicket.id = "tic_" + uuidv4()
 
-        const sqlInsert = 'INSERT INTO tickets (batch_id, event_id, eventDate_id, customer_id, payment_id, purchase_date, price, qr_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-        const [insertResult] = await connection.execute(sqlInsert, [
+        const sqlInsert = 'INSERT INTO tickets (id, batch_id, event_id, eventDate_id, customer_id, payment_id, purchase_date, price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        await connection.execute(sqlInsert, [
+            newTicket.id,
             newTicket.batchId,
             newTicket.eventId,
             newTicket.eventDateId,
@@ -122,12 +120,11 @@ const createNewTicket = async (newTicket) => {
             newTicket.paymentId,
             newTicket.purchaseDate,
             newTicket.price,
-            newTicket.qrCode,
+            newTicket.status ? newTicket.status : "AVALIABLE"
         ]);
 
-        const ticketId = insertResult.insertId;
         const sqlSelect2 = 'SELECT * FROM tickets WHERE id = ?';
-        const [rows2] = await connection.execute(sqlSelect2, [ticketId]);
+        const [rows2] = await connection.execute(sqlSelect2, [newTicket.id]);
 
         if (rows2.length === 0) {
             throw new NotFoundError('Erro ao retornar o ingresso cadastrado');
@@ -145,7 +142,6 @@ const createNewTicket = async (newTicket) => {
             row.payment_id,
             row.purchase_date,
             row.price,
-            row.qr_code,
             row.status,
             row.created_at
         )
@@ -208,7 +204,6 @@ const updateTicket = async (newTicket) => {
             row.payment_id,
             row.purchase_date,
             row.price,
-            row.qr_code,
             row.status,
             row.created_at
         )

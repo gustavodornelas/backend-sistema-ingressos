@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const NoContentError = require('../CustomErrors/NoContentError')
 const NotFoundError = require('../CustomErrors/NotFoundError')
 const dbPool = require('../config/dbPool')
@@ -93,8 +95,9 @@ const createNewVenue = async (newVenue) => {
     try {
         connection = await dbPool.getConnection()
 
-        const sqlInsert = 'INSERT INTO venues (name, address, address_number, complement, province, city, state, postal_code, capacity) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )'
+        const sqlInsert = 'INSERT INTO venues (id, name, address, address_number, complement, province, city, state, postal_code, capacity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? )'
         const [insertResult] = await connection.execute(sqlInsert, [
+            "ven_" + uuidv4(),
             newVenue.name,
             newVenue.address,
             newVenue.addressNumber,

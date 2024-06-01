@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const DuplicateError = require('../CustomErrors/DuplicateError')
 const NoContentError = require('../CustomErrors/NoContentError')
 const NotFoundError = require('../CustomErrors/NotFoundError')
@@ -160,7 +162,7 @@ const getDefaultCustomerAddress = async (customerId) => {
 }
 
 // Cadastrar um novo endereço
-const createNewCustomerAddress = async (customerAddress) => {
+const createNewCustomerAddress = async (newCustomerAddress) => {
     let connection = null
 
     try {
@@ -169,7 +171,7 @@ const createNewCustomerAddress = async (customerAddress) => {
 
         // Consulte o banco de dados para obter o usuário
         const sqlSelect1 = 'SELECT * FROM customers WHERE id = ?'
-        let [rows] = await connection.execute(sqlSelect1, [customerAddress.customerId])
+        let [rows] = await connection.execute(sqlSelect1, [newCustomerAddress.customerId])
 
         // Verifique se foi encontrado algum usuário
         if (rows.length === 0) {
@@ -177,34 +179,35 @@ const createNewCustomerAddress = async (customerAddress) => {
         }
 
         // Verificando se o endereço do usuário existe
-        const existingCustomerAddress = await checkExistingCustomerAddress(customerAddress)
+        const existingCustomerAddress = await checkExistingCustomerAddress(newCustomerAddress)
         if (existingCustomerAddress) {
             throw new DuplicateError("Endereço já cadastradado para o usuário")
         }
 
         // Verificando se o novo endereço é o padrão do cliente
-        if (customerAddress.defaultAddress == 'Y') {
+        if (newCustomerAddress.defaultAddress == 'Y') {
             const sqlUpdate = 'UPDATE customers_address SET default_address = "" WHERE customer_id = ?'
-            await connection.execute(sqlUpdate, [customerAddress.customerId])
+            await connection.execute(sqlUpdate, [newCustomerAddress.customerId])
         }
 
-        const sqlInsert = 'INSERT INTO customers_address (customer_id, name, address, address_number, complement, province, city, state, postal_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        const [insertResult] = await connection.execute(sqlInsert, [customerAddress.customerId,
-                                                                    customerAddress.name,
-                                                                    customerAddress.address,
-                                                                    customerAddress.addressNumber,
-                                                                    customerAddress.complement,
-                                                                    customerAddress.province,
-                                                                    customerAddress.city,
-                                                                    customerAddress.state,
-                                                                    customerAddress.postalCode,
-                                                                    customerAddress.defaultAddress]
-                                                                    )
-
-        const customerId = insertResult.insertId
+        newCustomerAddress.id = "add_" + uuidv4()
+        const sqlInsert = 'INSERT INTO customers_address (id, customer_id, name, address, address_number, complement, province, city, state, postal_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        await connection.execute(sqlInsert, [
+            newCustomerAddress.id,
+            newCustomerAddress.customerId,
+            newCustomerAddress.name,
+            newCustomerAddress.address,
+            newCustomerAddress.addressNumber,
+            newCustomerAddress.complement,
+            newCustomerAddress.province,
+            newCustomerAddress.city,
+            newCustomerAddress.state,
+            newCustomerAddress.postalCode,
+            newCustomerAddress.defaultAddress]
+        )
 
         const sqlSelect2 = 'SELECT * FROM customers_address WHERE id = ?'
-        const [rows2] = await connection.execute(sqlSelect2, [customerId])
+        const [rows2] = await connection.execute(sqlSelect2, [newCustomerAddress.id])
 
         // Verificando se o endereço cadastrado foi recuperado
         if (rows2.length === 0) {
@@ -213,7 +216,7 @@ const createNewCustomerAddress = async (customerAddress) => {
 
         await connection.commit()
 
-        const customersAddress = new CustomerAddress(
+        const customerAddress = new CustomerAddress(
             rows2[0].id,
             rows2[0].customer_id,
             rows2[0].name,
@@ -228,7 +231,7 @@ const createNewCustomerAddress = async (customerAddress) => {
             rows2[0].created_at
         )
 
-        return { customersAddress }
+        return { customerAddress }
 
     } catch (error) {
         console.log(error)

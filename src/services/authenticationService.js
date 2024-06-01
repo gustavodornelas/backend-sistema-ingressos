@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const { v4: uuidv4 } = require('uuid')
 
 const secretKey = 'Ticket$System'
 
@@ -15,8 +16,8 @@ const login = async (email, password) => {
         connection = await dbPool.getConnection()
 
         // Consulte o banco de dados para obter o usuário
-        const sql = 'SELECT * FROM customers WHERE email = ?'
-        const [rows] = await connection.execute(sql, [email])
+        const sqlSelect = 'SELECT * FROM customers WHERE email = ?'
+        const [rows] = await connection.execute(sqlSelect, [email])
 
         // Verifique se foi encontrado algum usuário
         if (rows.length === 0) {
@@ -53,7 +54,12 @@ const login = async (email, password) => {
         )
 
         // Inserindo o token no banco de dados
-        connection.query('INSERT INTO tokens (token, customer_id) VALUES (?, ?)', [token, customer.id])
+        const sqlInsert = 'INSERT INTO tokens (id, token, customer_id) VALUES (?, ?, ?)'
+        await connection.execute(sqlInsert, [
+            "tok_" + uuidv4(),
+            token, 
+            customer.id
+        ])
 
         // Retorne uma mensagem indicando que o usuário foi logado com sucesso
         customer.password = undefined

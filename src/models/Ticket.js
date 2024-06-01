@@ -1,5 +1,5 @@
 class Ticket {
-    constructor(id = null, batchId, eventId, eventDateId, customerId, paymentId, purchaseDate = null, price = null, qrCode = null, status = null, createdAt) {
+    constructor(id = null, batchId, eventId, eventDateId, customerId, paymentId, purchaseDate = null, price = null, status = null, createdAt) {
         this.id = id
         this.batchId = batchId
         this.eventId = eventId
@@ -8,7 +8,6 @@ class Ticket {
         this.paymentId = paymentId
         this.purchaseDate = purchaseDate
         this.price = price
-        this.qrCode = qrCode
         this.status = status
         this.createdAt = createdAt
     }

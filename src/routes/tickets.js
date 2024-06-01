@@ -57,7 +57,6 @@ router.put('/', tokenVerify, async (req, res) => {
         req.body.paymentId,
         req.body.purchaseDate,
         req.body.price,
-        req.body.qrCode,
         req.body.status,
         req.body.createdAt
     );
